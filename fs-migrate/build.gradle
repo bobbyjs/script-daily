@@ -1,9 +1,0 @@
-apply plugin: 'application'
-
-dependencies {
-    implementation project(':common')
-
-    implementation "org.slf4j:slf4j-simple:$slf4jVersion"
-}
-
-mainClassName = 'org.dreamcat.daily.script.App'

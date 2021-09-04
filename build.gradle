@@ -1,22 +1,20 @@
 plugins {
-    id 'org.springframework.boot' version '2.4.2' apply false
+    id 'org.springframework.boot' version '2.5.1' apply false
     id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-    id "org.sonarqube" version "3.1.1" apply false
 }
 
 subprojects {
     apply plugin: 'java-library'
-    apply plugin: 'org.sonarqube'
 
     compileJava.options.encoding = 'UTF-8'
     compileTestJava.options.encoding = 'UTF-8'
-    sourceCompatibility = '8'
+    sourceCompatibility = JavaVersion.VERSION_1_8
     version = '0.1'
     group = 'org.dreamcat.daily.script'
 
     ext {
         slf4jVersion = "1.7.30"
-        lombokVersion = "1.18.12"
+        lombokVersion = "1.18.20"
         junitVersion = "4.12"
     }
 
@@ -36,4 +34,16 @@ subprojects {
             print version
         }
     }
+
+    jar {
+        manifest {
+            //attributes "Main-Class": ""        
+        }
+    }
+
+    if (projectDir.getParent() == rootDir.path) {
+        apply from: "../tasks.gradle"
+    }
+
 }
+

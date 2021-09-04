@@ -1,17 +1,17 @@
 rootProject.name = 'script-daily'
 
 def projects = [
-        'common',
-        'send-mail',
-        'mongo-migrate',
-        'elasticsearch-migrate',
-        'fs-migrate',
-        'other:jshell',
-        'other:kotlin',
-        'other:legacy',
-        'other:node',
-        'other:python',
-        'other:shell'
+        'java:common',
+        'java:send-mail',
+        'java:mongo-migrate',
+        'java:elasticsearch-migrate',
+        'java:fs-migrate',
+        'jshell',
+        'kotlin',
+        'legacy',
+        'node',
+        'python',
+        'shell'
 ]
 
 projects.forEach {
