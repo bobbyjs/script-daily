@@ -58,7 +58,7 @@ public abstract class SchemaHandler<T> {
     }
 
     protected ArgParser defineArgs() {
-        ArgParser argParser = ArgParser.newInstance();
+        ArgParser argParser = ArgParser.create();
         argParser.addList("include", "i", "include");
         argParser.addList("exclude", "e", "exclude");
         argParser.addBool("verbose", "v", "verbose");

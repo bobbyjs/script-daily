@@ -63,7 +63,7 @@ class Main:
         rows1 = cursor1.fetchall()
         if len(rows1) == 0:
             print(
-                    f"no duplicated columns in the schema '{schema}' on column '{column}'")
+                f"no duplicated columns in the schema '{schema}' on column '{column}'")
             return
         columns = list(map(lambda row: row[1], rows1))
 
@@ -72,8 +72,8 @@ class Main:
         cursor2 = self.db.cursor()
         if self.use_timestamp:
             cursor2.execute(
-                    f'select {self.primary_key}, {column}, {self.time_name} '
-                    f'from {schema} where {column} in {values}')
+                f'select {self.primary_key}, {column}, {self.time_name} '
+                f'from {schema} where {column} in {values}')
         else:
             cursor2.execute(f'select {self.primary_key}, {column} '
                             f'from {schema} where {column} in {values}')
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     from .rename_strategy import STRATEGY_CONSTRUCTOR_DICT
 
     parser = argparse.ArgumentParser(
-            usage='Rename duplicated value for a database table')
+        usage='Rename duplicated value for a database table')
     parser.add_argument('-H', '--host', required=False, default='127.0.0.1',
                         type=str)
     parser.add_argument('-u', '--user', required=False, default='root',
@@ -140,12 +140,12 @@ if __name__ == '__main__':
                                             column=column_name)
             if result is None:
                 print(
-                        f'the column {column_name} in schema {schema_name} does not exist',
-                        file=sys.stderr)
+                    f'the column {column_name} in schema {schema_name} does not exist',
+                    file=sys.stderr)
                 exit(0)
             elif result is True:
                 print(
-                        f'the column {column_name} in schema {schema_name} has a unique index so I gonna skip it')
+                    f'the column {column_name} in schema {schema_name} has a unique index so I gonna skip it')
                 exit(0)
         except pymysql.Error:
             print(f'the schema {schema_name} does not exist', file=sys.stderr)

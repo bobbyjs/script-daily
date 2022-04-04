@@ -5,7 +5,7 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.common.x.jackson.JacksonUtil;
+import org.dreamcat.common.x.jackson.JsonUtil;
 import org.dreamcat.daily.script.common.SchemaHandler;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
@@ -51,7 +51,7 @@ public class MongoSchemaMigrateHandler extends SchemaHandler<String> {
         for (Map map : list) {
             if (verbose) {
                 log.info("migrate collection {}, record: {}",
-                        collectionName, JacksonUtil.toJson(map));
+                        collectionName, JsonUtil.toJson(map));
             }
             if (effect) {
                 targetMongoTemplate.save(map, collectionName);

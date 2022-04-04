@@ -1,5 +1,7 @@
 plugins {
-    id 'org.springframework.boot' version '2.5.1' apply false
+    // https://plugins.gradle.org/plugin/org.springframework.boot
+    id 'org.springframework.boot' version '2.6.6' apply false
+    // https://plugins.gradle.org/plugin/io.spring.dependency-management
     id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
 }
 
@@ -13,9 +15,12 @@ subprojects {
     group = 'org.dreamcat.daily.script'
 
     ext {
-        slf4jVersion = "1.7.30"
-        lombokVersion = "1.18.20"
-        junitVersion = "4.12"
+        // https://mvnrepository.com/artifact/org.projectlombok/lombok
+        lombokVersion = '1.18.22'
+        // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+        slf4jVersion = '1.7.36'
+        // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+        jupiterVersion = '5.8.2'
     }
 
     dependencies {
@@ -24,9 +29,10 @@ subprojects {
         testCompileOnly "org.projectlombok:lombok:$lombokVersion"
         testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
         implementation "org.slf4j:slf4j-api:$slf4jVersion"
-        testImplementation "junit:junit:$junitVersion"
+        testImplementation "org.junit.jupiter:junit-jupiter-api:$jupiterVersion"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$jupiterVersion"
 
-        implementation "org.dreamcat:common-core:$COMMON_VERSION"
+        implementation "org.dreamcat:common-core:0.2.1"
     }
 
     task printVersion {
@@ -35,14 +41,12 @@ subprojects {
         }
     }
 
-    jar {
-        manifest {
-            //attributes "Main-Class": ""        
-        }
+    test {
+        useJUnitPlatform()
     }
 
-    if (projectDir.getParent() == rootDir.path) {
-        apply from: "../tasks.gradle"
+    if (file('../../tasks.gradle').exists()) {
+        apply from: "../../tasks.gradle"
     }
 
 }

@@ -13,7 +13,7 @@ def on_connect(my_client, user_data, flags, result_code):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-            description="publish some message to the network server")
+        description="publish some message to the network server")
     parser.add_argument('--topic', '-t', required=True,
                         help='the topic you wanna subscribe to')
     parser.add_argument('--hostname', '-H', default='127.0.0.1:61613',
@@ -45,9 +45,9 @@ def publish_single():
     for message in messages:
         print("[{0}] {1} is published.".format(topic, message))
         publish.single(
-                topic=topic, payload=message, qos=qos, retain=retain,
-                hostname=host, port=port, client_id=client_id,
-                auth={'username': username, 'password': password})
+            topic=topic, payload=message, qos=qos, retain=retain,
+            hostname=host, port=port, client_id=client_id,
+            auth={'username': username, 'password': password})
 
 
 def client_publish():

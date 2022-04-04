@@ -1,45 +1,48 @@
 package org.dreamcat.daily.script;
 
 import java.io.IOException;
-import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.io.ClassPathUtil;
-import org.dreamcat.daily.script.common.SchemaHandler;
 
 /**
- * Create by tuke on 2021/4/5
+ * @author Jerry Will
+ * @version 2021-06-15
  */
 @Slf4j
 public class App {
 
     static final String USAGE;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         int length = args.length;
         if (length < 2) {
             if (length == 1 && (args[0].equals("-h") || args[0].equals("--help"))) {
                 System.out.println(USAGE);
                 System.exit(0);
             }
-            System.err.println("fs-migrate: try 'fs-migrate --help' for more information");
+            System.err.println("json-op: try 'json-op --help' for more information");
             System.exit(1);
         }
 
         String command = args[0];
-        // remaining args
-        args = Arrays.copyOfRange(args, 1, length);
-
-        SchemaHandler<?> schemaHandler;
         switch (command) {
-            case "rename":
-                schemaHandler = new RenameOp();
+            case "compare":
+            case "compare:print":
+                CompareJsonHandler.print(args);
+                break;
+            case "compare:preJsonOneLine":
+                CompareJsonHandler.preJsonOneLine(args);
+                break;
+            case "sort":
+            case "sort:print":
+                SortJsonFieldHandler.print(args);
                 break;
             default:
                 System.err.printf("unsupported command: %s%n", command);
+                System.out.println(USAGE);
                 System.exit(1);
-                return;
+                break;
         }
-        schemaHandler.run(args);
     }
 
     static {

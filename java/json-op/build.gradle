@@ -1,7 +1,6 @@
 dependencies {
-    implementation "org.dreamcat:common-x:$COMMON_VERSION"
+    implementation "org.dreamcat:common-x:0.2.1"
     implementation "org.slf4j:slf4j-simple:$slf4jVersion"
-    implementation "com.sun.mail:jakarta.mail:2.0.1"
 }
 
 jar {

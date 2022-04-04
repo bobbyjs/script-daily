@@ -24,28 +24,28 @@ class RabbitMQUtil:
             port = int(port)
             host = host.split(":")[0]
         connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host=host, port=port, username=username, password=password))
+            host=host, port=port, username=username, password=password))
         self.channel = connection.channel()
 
     def send(self, queue_name, message, exchange_name='', ):
         self.channel.basic_publish(
-                exchange=exchange_name,
-                routing_key=queue_name,
-                body=message,
-                properties=pika.spec.BasicProperties(content_type="text/plain"))
+            exchange=exchange_name,
+            routing_key=queue_name,
+            body=message,
+            properties=pika.spec.BasicProperties(content_type="text/plain"))
 
     def receive(self, queue_name):
         self.channel.basic_consume(
-                queue=queue_name,
-                on_message_callback=self.callback,
-                auto_ack=True)
+            queue=queue_name,
+            on_message_callback=self.callback,
+            auto_ack=True)
         self.channel.start_consuming()
 
     def migrate(self, queue_name1, queue_name2):
         self.channel.basic_consume(
-                queue=queue_name1,
-                on_message_callback=self.callback_migrate(queue_name2),
-                auto_ack=True)
+            queue=queue_name1,
+            on_message_callback=self.callback_migrate(queue_name2),
+            auto_ack=True)
         self.channel.start_consuming()
 
     def callback(self, channel, method, properties, body):
@@ -56,10 +56,10 @@ class RabbitMQUtil:
         def callback(channel, method, properties, body):
             print("%s" % body.decode())
             self.channel.basic_publish(
-                    exchange='',
-                    routing_key=queue_name,
-                    body=body,
-                    properties=properties)
+                exchange='',
+                routing_key=queue_name,
+                body=body,
+                properties=properties)
 
         return callback
 
@@ -67,13 +67,13 @@ class RabbitMQUtil:
     def help():
         import sys
         print(
-                f"Usage: {sys.argv[0]} amqp://username:password@localhost:5672/vhost \\")
+            f"Usage: {sys.argv[0]} amqp://username:password@localhost:5672/vhost \\")
         print(
-                f"\treceive <queue>")
+            f"\treceive <queue>")
         print(
-                "\tsend <queue> <message>...")
+            "\tsend <queue> <message>...")
         print(
-                f"\tmigrate <queue1> <queue2>")
+            f"\tmigrate <queue1> <queue2>")
         sys.exit(1)
 
 

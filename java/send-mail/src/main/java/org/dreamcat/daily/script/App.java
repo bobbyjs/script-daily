@@ -2,7 +2,8 @@ package org.dreamcat.daily.script;
 
 import java.io.IOException;
 import java.util.List;
-import org.dreamcat.common.io.IOUtil;
+import org.dreamcat.common.io.ClassPathUtil;
+import org.dreamcat.common.text.argparse.ArgParseException;
 import org.dreamcat.common.text.argparse.ArgParser;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.x.mail.MailSender;
@@ -18,24 +19,7 @@ public class App {
     static final String USAGE;
 
     public static void main(String[] args) throws Exception {
-        ArgParser argParser = ArgParser.newInstance();
-        // basic usage
-        argParser.addBool("help", "help");
-        // connect
-        argParser.add("host", "h", "host");
-        argParser.add("user", "u", "user");
-        argParser.add("password", "p", "password");
-        // content
-        argParser.add("from", "f", "from");
-        argParser.addList("to", "t", "to");
-        argParser.addList("cc", "cc");
-        argParser.addList("bcc", "bcc");
-        argParser.addList("replyTo", "replyTo");
-        argParser.add("subject", "s", "subject");
-        argParser.add("content", "c", "content");
-
-        argParser.parse(args);
-
+        ArgParser argParser = parseArgs(args);
         boolean help = argParser.getBool("help");
         if (help) {
             System.out.println(USAGE);
@@ -56,6 +40,7 @@ public class App {
         MailSender sender = new MailSender(host, user, password);
 
         String from = argParser.get("from");
+        if (ObjectUtil.isBlank(from)) from = user;
         List<String> to = argParser.getList("to");
         List<String> cc = argParser.getList("cc");
         List<String> bcc = argParser.getList("bcc");
@@ -77,6 +62,27 @@ public class App {
         if (ObjectUtil.isNotEmpty(bcc)) op.bcc(bcc);
         if (ObjectUtil.isNotEmpty(replyTo)) op.replyTo(replyTo);
         op.send();
+    }
+
+    private static ArgParser parseArgs(String... args) throws ArgParseException {
+        ArgParser argParser = ArgParser.create();
+        // basic usage
+        argParser.addBool("help", "help");
+        // connect
+        argParser.add("host", "h", "host");
+        argParser.add("user", "u", "user");
+        argParser.add("password", "p", "password");
+        // content
+        argParser.add("from", "f", "from");
+        argParser.addList("to", "t", "to");
+        argParser.addList("cc", "cc");
+        argParser.addList("bcc", "bcc");
+        argParser.addList("replyTo", "replyTo");
+        argParser.add("subject", "s", "subject");
+        argParser.add("content", "c", "content");
+
+        argParser.parse(args);
+        return argParser;
     }
 
     private static void checkParameter(Object value, String key, String names) {
@@ -102,10 +108,9 @@ public class App {
 
     static {
         try {
-            USAGE = IOUtil.readAsString(App.class.getResourceAsStream("/usage.txt"));
+            USAGE = ClassPathUtil.getResourceAsString("usage.txt");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
 }

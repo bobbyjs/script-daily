@@ -260,34 +260,34 @@ def generate(base_path, package_name, base_name, method_names):
             svc_impl_method_str = svc_impl_modify_method_str
 
         ctrl_method_content = ctrl_method_str.format(
-                left_bracket=left_bracket, right_bracket=right_bracket,
-                http_method_name=http_method_name,
-                base_name=base_name,
-                query=query, query_type=query_type,
-                method_name=method_name,
-                method_name_cap=method_name_cap)
+            left_bracket=left_bracket, right_bracket=right_bracket,
+            http_method_name=http_method_name,
+            base_name=base_name,
+            query=query, query_type=query_type,
+            method_name=method_name,
+            method_name_cap=method_name_cap)
         ctrl_method_body.append(ctrl_method_content.rstrip())
 
         svc_method_content = svc_method_str.format(
-                base_name=base_name,
-                method_name=method_name,
-                query=query, query_type=query_type,
-                method_name_cap=method_name_cap)
+            base_name=base_name,
+            method_name=method_name,
+            query=query, query_type=query_type,
+            method_name_cap=method_name_cap)
         svc_method_body.append(svc_method_content.rstrip())
 
         svc_impl_method_content = svc_impl_method_str.format(
-                left_bracket=left_bracket, right_bracket=right_bracket,
-                base_name=base_name,
-                method_name=method_name,
-                query=query, query_type=query_type,
-                method_name_cap=method_name_cap)
+            left_bracket=left_bracket, right_bracket=right_bracket,
+            base_name=base_name,
+            method_name=method_name,
+            query=query, query_type=query_type,
+            method_name_cap=method_name_cap)
         svc_impl_method_body.append(svc_impl_method_content.rstrip())
 
     ctrl_content = ctrl_str.format(
-            left_bracket=left_bracket, right_bracket=right_bracket,
-            date_time_str=date_time_str,
-            package_name=package_name, base_name=base_name,
-            method_body='\n'.join(ctrl_method_body))
+        left_bracket=left_bracket, right_bracket=right_bracket,
+        date_time_str=date_time_str,
+        package_name=package_name, base_name=base_name,
+        method_body='\n'.join(ctrl_method_body))
     write_to(ctrl_fn, ctrl_content.strip())
 
     #
@@ -296,15 +296,15 @@ def generate(base_path, package_name, base_name, method_names):
                             f'service/impl/{base_name}ServiceImpl.java')
 
     svc_content = svc_str.format(
-            left_bracket=left_bracket, right_bracket=right_bracket,
-            date_time_str=date_time_str,
-            package_name=package_name, base_name=base_name,
-            method_body='\n'.join(svc_method_body))
+        left_bracket=left_bracket, right_bracket=right_bracket,
+        date_time_str=date_time_str,
+        package_name=package_name, base_name=base_name,
+        method_body='\n'.join(svc_method_body))
     svc_impl_content = svc_impl_str.format(
-            left_bracket=left_bracket, right_bracket=right_bracket,
-            date_time_str=date_time_str,
-            package_name=package_name, base_name=base_name,
-            method_body='\n'.join(svc_impl_method_body))
+        left_bracket=left_bracket, right_bracket=right_bracket,
+        date_time_str=date_time_str,
+        package_name=package_name, base_name=base_name,
+        method_body='\n'.join(svc_impl_method_body))
     write_to(svc_fn, svc_content.strip())
     write_to(svc_impl_fn, svc_impl_content.strip())
 
@@ -321,9 +321,9 @@ def generate(base_path, package_name, base_name, method_names):
         method_name_cap = method_name[0].upper() + method_name[1:]
         if not query:
             convert_method_body.append(convert_method_str.format(
-                    base_name=base_name, method_name_cap=method_name_cap,
-                    source_type='Param', source_type_lower='param',
-                    target_type='BO', target_type_lower='bo'
+                base_name=base_name, method_name_cap=method_name_cap,
+                source_type='Param', source_type_lower='param',
+                target_type='BO', target_type_lower='bo'
             ).rstrip())
 
             param_fn = path.join(base_path,
@@ -332,28 +332,28 @@ def generate(base_path, package_name, base_name, method_names):
                               f'model/bo/{base_name_uncap}/{base_name}{method_name_cap}BO.java')
 
             param_content = pojo_param_dto_str.format(
-                    left_bracket=left_bracket, right_bracket=right_bracket,
-                    date_time_str=date_time_str,
-                    package_name=package_name,
-                    base_name=base_name, base_name_uncap=base_name_uncap,
-                    method_name_cap=method_name_cap,
-                    type='Param', type_lower='param')
+                left_bracket=left_bracket, right_bracket=right_bracket,
+                date_time_str=date_time_str,
+                package_name=package_name,
+                base_name=base_name, base_name_uncap=base_name_uncap,
+                method_name_cap=method_name_cap,
+                type='Param', type_lower='param')
             bo_content = pojo_bo_vo_str.format(
-                    left_bracket=left_bracket, right_bracket=right_bracket,
-                    date_time_str=date_time_str,
-                    package_name=package_name,
-                    base_name=base_name, base_name_uncap=base_name_uncap,
-                    method_name_cap=method_name_cap,
-                    type='BO', type_lower='bo')
+                left_bracket=left_bracket, right_bracket=right_bracket,
+                date_time_str=date_time_str,
+                package_name=package_name,
+                base_name=base_name, base_name_uncap=base_name_uncap,
+                method_name_cap=method_name_cap,
+                type='BO', type_lower='bo')
 
             write_to(param_fn, param_content.strip())
             write_to(bo_fn, bo_content.strip())
 
         if flag == 'Q':
             convert_method_body.append(convert_method_str.format(
-                    base_name=base_name, method_name_cap=method_name_cap,
-                    source_type='VO', source_type_lower='vo',
-                    target_type='DTO', target_type_lower='dto'
+                base_name=base_name, method_name_cap=method_name_cap,
+                source_type='VO', source_type_lower='vo',
+                target_type='DTO', target_type_lower='dto'
             ).rstrip())
 
             vo_fn = path.join(base_path,
@@ -362,27 +362,27 @@ def generate(base_path, package_name, base_name, method_names):
                                f'controller/dto/{base_name_uncap}/{base_name}{method_name_cap}DTO.java')
 
             vo_content = pojo_bo_vo_str.format(
-                    left_bracket=left_bracket, right_bracket=right_bracket,
-                    date_time_str=date_time_str,
-                    package_name=package_name,
-                    base_name=base_name, base_name_uncap=base_name_uncap,
-                    method_name_cap=method_name_cap,
-                    type='VO', type_lower='vo')
+                left_bracket=left_bracket, right_bracket=right_bracket,
+                date_time_str=date_time_str,
+                package_name=package_name,
+                base_name=base_name, base_name_uncap=base_name_uncap,
+                method_name_cap=method_name_cap,
+                type='VO', type_lower='vo')
             dto_content = pojo_param_dto_str.format(
-                    left_bracket=left_bracket, right_bracket=right_bracket,
-                    date_time_str=date_time_str,
-                    package_name=package_name,
-                    base_name=base_name, base_name_uncap=base_name_uncap,
-                    method_name_cap=method_name_cap,
-                    type='DTO', type_lower='dto')
+                left_bracket=left_bracket, right_bracket=right_bracket,
+                date_time_str=date_time_str,
+                package_name=package_name,
+                base_name=base_name, base_name_uncap=base_name_uncap,
+                method_name_cap=method_name_cap,
+                type='DTO', type_lower='dto')
             write_to(dto_fn, dto_content.strip())
             write_to(vo_fn, vo_content.strip())
 
     convert_content = convert_str.format(
-            left_bracket=left_bracket, right_bracket=right_bracket,
-            date_time_str=date_time_str,
-            package_name=package_name, base_name=base_name,
-            method_body='\n'.join(convert_method_body))
+        left_bracket=left_bracket, right_bracket=right_bracket,
+        date_time_str=date_time_str,
+        package_name=package_name, base_name=base_name,
+        method_body='\n'.join(convert_method_body))
     write_to(convert_fn, convert_content.strip())
 
 
