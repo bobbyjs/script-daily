@@ -1,6 +1,6 @@
 plugins {
     // https://plugins.gradle.org/plugin/org.springframework.boot
-    id 'org.springframework.boot' version '2.6.6' apply false
+    id 'org.springframework.boot' version '2.7.0' apply false
     // https://plugins.gradle.org/plugin/io.spring.dependency-management
     id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
 }
@@ -16,11 +16,13 @@ subprojects {
 
     ext {
         // https://mvnrepository.com/artifact/org.projectlombok/lombok
-        lombokVersion = '1.18.22'
+        lombokVersion = '1.18.24'
         // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
         slf4jVersion = '1.7.36'
         // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
         jupiterVersion = '5.8.2'
+        // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+        jacksonVersion = '2.13.3'
     }
 
     dependencies {
@@ -32,7 +34,7 @@ subprojects {
         testImplementation "org.junit.jupiter:junit-jupiter-api:$jupiterVersion"
         testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$jupiterVersion"
 
-        implementation "org.dreamcat:common-core:0.2.1"
+        implementation "org.dreamcat:common-core:0.3"
     }
 
     task printVersion {

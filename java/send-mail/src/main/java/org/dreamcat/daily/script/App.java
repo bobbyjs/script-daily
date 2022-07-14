@@ -6,7 +6,7 @@ import org.dreamcat.common.io.ClassPathUtil;
 import org.dreamcat.common.text.argparse.ArgParseException;
 import org.dreamcat.common.text.argparse.ArgParser;
 import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.common.x.mail.MailSender;
+import org.dreamcat.jwrap.mail.MailSender;
 
 /**
  * Create by tuke on 2021/3/5

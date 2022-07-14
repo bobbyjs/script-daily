@@ -19,8 +19,10 @@ fun merge_ts_help() {
     System.exit(1)
 }
 
-fun merge_ts(path: String, range: IntRange, prefix: String, suffix: String,
-             output: String, padding: Boolean, verbose: Boolean) {
+fun merge_ts(
+    path: String, range: IntRange, prefix: String, suffix: String,
+    output: String, padding: Boolean, verbose: Boolean
+) {
     val width = "${range.endInclusive}".length
 
     val filename = UUID.randomUUID().toString()
@@ -52,11 +54,12 @@ fun merge_ts(path: String, range: IntRange, prefix: String, suffix: String,
         }
     }
 
-    if (true)return
+    if (true) return
 
     val cmd = "cd $path && ffmpeg -f concat -i $filename -c copy -bsf:a aac_adtstoasc $output"
     val proc = Runtime.getRuntime().exec(
-            arrayOf("sh", "-c", cmd));
+        arrayOf("sh", "-c", cmd)
+    );
     proc.inputStream.use {
         it.bufferedReader().lines().forEach(::println)
     }

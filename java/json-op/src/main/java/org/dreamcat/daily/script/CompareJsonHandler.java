@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.util.MapUtil;
-import org.dreamcat.common.x.jackson.JsonUtil;
+import org.dreamcat.common.x.json.JsonUtil;
 
 /**
  * @author Jerry Will

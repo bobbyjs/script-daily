@@ -1,0 +1,10 @@
+dependencies {
+    implementation "org.dreamcat:common-x:0.3"
+    implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "org.dreamcat.daily.script.App"
+    }
+}

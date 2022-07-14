@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source "$SCRIPT_HOME/common/log.sh"
+source "$SCRIPT_SHELL_HOME/common/log.sh"
 
 function upgrade_gradle() {
     gv=$1

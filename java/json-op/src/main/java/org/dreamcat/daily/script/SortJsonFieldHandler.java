@@ -3,7 +3,7 @@ package org.dreamcat.daily.script;
 import java.io.File;
 import java.util.Map;
 import org.dreamcat.common.util.MapUtil;
-import org.dreamcat.common.x.jackson.JsonUtil;
+import org.dreamcat.common.x.json.JsonUtil;
 
 /**
  * @author Jerry Will

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+work_dir=$(pwd -P)
 current_dir=$(cd "$(dirname $0)" && pwd -P)
 project_dir=$(cd "$current_dir/../.." && pwd -P)
+cd "$project_dir"
 
 module_name=$1
 shift
@@ -41,6 +43,8 @@ while [ $# -gt 0 ]; do
     fi
     shift
 done
+
+cd "$work_dir"
 
 java "${jvm_args[@]}" \
   -jar $jar_file "${main_args[@]}"
