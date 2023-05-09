@@ -1,5 +1,5 @@
 dependencies {
-    implementation "org.dreamcat:jwrap-mail:0.1"
+    implementation project(':java:common')
     implementation "org.slf4j:slf4j-simple:$slf4jVersion"
     implementation "com.sun.mail:jakarta.mail:2.0.1"
 }

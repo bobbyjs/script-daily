@@ -2,12 +2,14 @@ rootProject.name = 'script-daily'
 
 def projects = [
         'common',
+        'text-find',
         'send-mail',
         'mongo-migrate',
         'es-migrate',
         'fs-migrate',
         'json-op',
-        'text-find',
+        'jdbc-op',
+        'eval-op'
 ]
 
 projects.forEach {

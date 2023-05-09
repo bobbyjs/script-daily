@@ -17,7 +17,6 @@ function init_gradle_java_project() {
     gradle init --type java-library \
     --dsl groovy --test-framework junit \
     --project-name ${project_name} --package ${package_name}
-    echo "done."
     # return what gradle return, 0-255 number
     return $?
 }

@@ -1,11 +1,17 @@
 plugins {
     // https://plugins.gradle.org/plugin/org.springframework.boot
-    id 'org.springframework.boot' version '2.7.0' apply false
+    id 'org.springframework.boot' version '2.7.10' apply false
     // https://plugins.gradle.org/plugin/io.spring.dependency-management
     id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
 }
 
 subprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+    }
+
     apply plugin: 'java-library'
 
     compileJava.options.encoding = 'UTF-8'
@@ -16,13 +22,13 @@ subprojects {
 
     ext {
         // https://mvnrepository.com/artifact/org.projectlombok/lombok
-        lombokVersion = '1.18.24'
+        lombokVersion = '1.18.26'
         // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
         slf4jVersion = '1.7.36'
         // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
-        jupiterVersion = '5.8.2'
+        jupiterVersion = '5.9.2'
         // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
-        jacksonVersion = '2.13.3'
+        jacksonVersion = '2.14.2'
     }
 
     dependencies {
@@ -34,10 +40,11 @@ subprojects {
         testImplementation "org.junit.jupiter:junit-jupiter-api:$jupiterVersion"
         testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$jupiterVersion"
 
-        implementation "org.dreamcat:common-core:0.3"
+        implementation "org.dreamcat:common:0.4"
+        // implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     }
 
-    task printVersion {
+    tasks.register('printVersion') {
         doLast {
             print version
         }
@@ -47,9 +54,7 @@ subprojects {
         useJUnitPlatform()
     }
 
-    if (file('../../tasks.gradle').exists()) {
-        apply from: "../../tasks.gradle"
-    }
-
+    apply from: new File(rootDir, 'tasks.gradle')
+    apply from: new File(rootDir, 'publish.gradle')
 }
 

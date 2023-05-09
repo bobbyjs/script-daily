@@ -1,0 +1,78 @@
+identWidth: 2
+
+header: jdbc-op jdbc CLI Tool
+
+helpDesc:
+  help: Print help information
+
+subcommands:
+  insert-random:
+    commandDesc: Insert random data into the specified table
+    header: "jdbc-op insert-random Insert random data into the specified table\nExample: jdbc-op insert-random test_table --jdbc-url jdbc:mysql://127.0.0.1:3306/test_db \
+           -uroot -proot -d /path/to/mysql-jdbc-driver.jar -n10 -i id ctime mtime"
+    helpParam:
+      batchSize: n
+      rowNum: n
+    helpDesc:
+      help: Print help information
+      tableName: "Table name，example: my_table, my_db.my_table"
+      jdbcUrl: JDBC url
+      user: JDBC user
+      password: JDBC password
+      properties: Additional jdbc parameters
+      driverPath: JDBC driver jar package path
+      driverClassName: JDBC driver fully qualified class name
+      yes: Whether to actually execute the SQL
+      ignoredColumns: Ignored columns, multiple values can be passed in
+      batchSize: The size limit of batch insert, that is, the maximum number of rows of generated values
+      rowNum: Total number of rows inserted
+
+  type-table:
+    commandDesc: Generate corresponding tables and data through the specified type
+    header: "jdbc-op type-table Generate corresponding tables and data through the specified type\nExample: jdbc-op typed-table t_all_type -t int double date"
+    helpParam:
+      types: <type1 type2 ...>
+      partitionTypes: <type1 type2 ...>
+      columnCommentSql: sql
+      batchSize: n
+      rowNum: n
+    helpDesc:
+      help: Print help information
+      tableName: "Table name，example: my_table, my_db.my_table"
+      file: "Describe the column type file, separated by newline \\n\n${ls} For example: int, varchar(%d), decimal(%d, %d), if you want to specify it as a partition"
+      types: Column types, multiple values can be passed in, mutually exclusive with -f, the value of -f is preferred
+      partitionTypes: Partition type
+      commentAlone: Whether to generate additional comment sql
+      columnCommentSql: "comment sql\n${ls}Example：comment on column $table.$column is 'Column Type: $type';\n${ls}Or：Column Type: $type"
+      compact: Compact mode, SQL does not wrap
+      extraColumnDdl: Additional column SQL that needs to be created
+      tableDdlSuffix: Custom SQL suffix for table creation
+      batchSize: The size limit of batch insert, that is, the maximum number of rows of generated values
+      rowNum: Total number of rows inserted
+  batch-type-table:
+    commandDesc: Generate data tables and data in batches
+    header: "jdbc-op batch-type-table Generate data tables and data in batches\nExample: jdbc-op batch-type-table -t bigint timestamp string"
+    helpParam:
+      types: <type1 type2 ...>
+      combinationMode: <m1 m2 m3-m4 m5 ...>
+      combinationRepeat: n
+      columnCommentSql: sql
+      batchSize: n
+      rowNum: n
+    helpDesc:
+      help: Print help information
+      file: Describe the column type file, each line represents a table, the type is separated by , and there can be spaces near the comma
+      types: Column types, multiple values can be passed in, mutually exclusive with -f, the value of -f is preferred
+      combinationMode: "Use the type specified by -t to generate a combination\n${ls} For example, there are 9 types in total, and the value of combinationMode is [3, 6-8]\n${ls} means that 9 respectively takes 3, 6, Combinations of 7 and 8, generate corresponding tables for each possible combination"
+      combinationRepeat: The number of repetitions for each combination
+      tableNamePrefix: "Table name template, for example: test.t_table_%d"
+      tableNameOffset: The starting offset of %d in tableNamePrefix
+      ignoreError: Whether to ignore the error and continue after the SQL execution fails
+      outputFile: File name, to save SQL
+      outputFileSqlMaxCount: "Stored in separate files, the maximum number of SQL in each file\n${ls}outputFile takes a.sql, then generates a1.sql, a2.sql ..."
+      commentAlone: See jdbc-op type-table --help
+      columnCommentSql: See jdbc-op type-table --help
+      tableDdlSuffix: See jdbc-op type-table --help
+      extraColumnDdl: See jdbc-op type-table --help
+      batchSize: See jdbc-op type-table --help
+      rowNum: See jdbc-op type-table --help

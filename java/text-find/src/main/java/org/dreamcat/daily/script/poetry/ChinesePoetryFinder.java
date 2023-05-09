@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import org.dreamcat.common.text.argparse.ArgParseException;
-import org.dreamcat.common.text.argparse.ArgParser;
+import org.dreamcat.common.argparse.ArgParseException;
+import org.dreamcat.common.argparse.ArgParser;
 import org.dreamcat.common.util.StringUtil;
 import org.dreamcat.common.util.SystemUtil;
 import org.dreamcat.common.x.json.JsonUtil;
@@ -114,7 +114,7 @@ public class ChinesePoetryFinder implements Predicate<String[]> {
     }
 
     private static ArgParser parseArgs(String... args) throws ArgParseException {
-        ArgParser argParser = ArgParser.create();
+        ArgParser argParser = new ArgParser();
         argParser.addBool("help", "help");
         argParser.add("author", "a", "author");
         argParser.add("title", "t", "title");

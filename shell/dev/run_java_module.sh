@@ -3,13 +3,13 @@
 work_dir=$(pwd -P)
 current_dir=$(cd "$(dirname $0)" && pwd -P)
 project_dir=$(cd "$current_dir/../.." && pwd -P)
-cd "$project_dir"
+cd "$project_dir" || (echo "dir not found: $project_dir" && return 1)
 
 module_name=$1
 shift
 if [ -z "$module_name" ]; then
   log_error "module_name is unset"
-  exit 1
+  return 1
 fi
 
 jar_version=$($project_dir/gradlew :java:$module_name:printVersion -q)

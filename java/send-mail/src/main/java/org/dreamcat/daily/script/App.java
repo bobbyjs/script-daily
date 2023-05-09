@@ -2,11 +2,12 @@ package org.dreamcat.daily.script;
 
 import java.io.IOException;
 import java.util.List;
-import org.dreamcat.common.io.ClassPathUtil;
-import org.dreamcat.common.text.argparse.ArgParseException;
-import org.dreamcat.common.text.argparse.ArgParser;
+import org.dreamcat.common.argparse.ArgParseException;
+import org.dreamcat.common.argparse.ArgParser;
+import org.dreamcat.common.mail.MailSender;
+import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.jwrap.mail.MailSender;
+import org.dreamcat.daily.script.common.CliUtil;
 
 /**
  * Create by tuke on 2021/3/5
@@ -34,9 +35,9 @@ public class App {
         if (ObjectUtil.isBlank(password)) password = MAIL_PASSWORD;
 
         // validate connection parameters
-        checkParameter(host, "host", "-h|--host", "MAIL_HOST");
-        checkParameter(user, "user", "-u|--user", "MAIL_USER");
-        checkParameter(password, "password", "-p|--password", "MAIL_PASSWORD");
+        CliUtil.checkParameter(host, "host", "-h|--host", "MAIL_HOST");
+        CliUtil.checkParameter(user, "user", "-u|--user", "MAIL_USER");
+        CliUtil.checkParameter(password, "password", "-p|--password", "MAIL_PASSWORD");
         MailSender sender = new MailSender(host, user, password);
 
         String from = argParser.get("from");
@@ -49,9 +50,9 @@ public class App {
         String content = argParser.get("content");
 
         // validate content parameters
-        checkParameter(to, "to", "-t|--to");
+        CliUtil.checkParameter(to, "to", "-t|--to");
         if (ObjectUtil.isEmpty(subject)) subject = "";
-        checkParameter(content, "content", "-c|--content");
+        CliUtil.checkParameter(content, "content", "-c|--content");
 
         MailSender.Op op = sender.newOp()
                 .from(from)
@@ -65,7 +66,7 @@ public class App {
     }
 
     private static ArgParser parseArgs(String... args) throws ArgParseException {
-        ArgParser argParser = ArgParser.create();
+        ArgParser argParser = new ArgParser();
         // basic usage
         argParser.addBool("help", "help");
         // connect
@@ -85,30 +86,17 @@ public class App {
         return argParser;
     }
 
-    private static void checkParameter(Object value, String key, String names) {
-        checkParameter(value, key, names, null);
-    }
-
-    private static void checkParameter(Object value, String key, String names, String env) {
-        if (value instanceof List) {
-            if (ObjectUtil.isNotEmpty((List<?>) value)) return;
-        } else {
-            if (ObjectUtil.isNotBlank((String) value)) return;
-        }
-        String envString = "";
-        if (ObjectUtil.isNotBlank(env)) {
-            envString = String.format(" or define the environment variable `%s`", env);
-        }
-
-        System.err.printf("required parameter `%s` is missing, "
-                        + "pass it via %s%s",
-                key, names, envString);
-        System.exit(1);
-    }
-
     static {
         try {
-            USAGE = ClassPathUtil.getResourceAsString("usage.txt");
+            String lang = System.getenv("LANG");
+            String name;
+            // such as: en_US.UTF-8
+            if (lang != null && lang.startsWith("en_")) {
+                name = "usage.en.txt";
+            } else {
+                name = "usage.txt";
+            }
+            USAGE = ClassPathUtil.getResourceAsString(name);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

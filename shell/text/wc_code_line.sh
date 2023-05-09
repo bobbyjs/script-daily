@@ -19,7 +19,4 @@ function wc_code_line() {
     echo $count
 }
 
-
-if [ $# != 0 ]; then
-    wc_code_line $@
-fi
+if [ $# != 0 ]; then wc_code_line $@; fi

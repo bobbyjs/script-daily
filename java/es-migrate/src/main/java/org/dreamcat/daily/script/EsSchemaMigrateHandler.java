@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.script.DelegateScriptEngine;
 import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.common.x.jackson.JsonUtil;
+import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.daily.script.common.SchemaMigrateHandler;
 import org.dreamcat.jwrap.elasticsearch.EsDocClient;
 import org.dreamcat.jwrap.elasticsearch.EsIndexClient;

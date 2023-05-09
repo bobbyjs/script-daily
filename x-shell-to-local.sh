@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
 
-source_dir=$(cd "$(dirname $0)" && pwd -P)
-[[ ! -d $HOME/.local/bin ]] && mkdir -p $HOME/.local/bin
-target_dir=$HOME/.local/bin
+SCRIPT_HOME=$(cd "$(dirname $0)" && pwd -P)
+SCRIPT_SHELL_HOME=$SCRIPT_HOME/shell
 
-# gradle
-ln -s $source_dir/shell/gradle/add_gradle_submodule.sh $target_dir/add_gradle_submodule
-ln -s $source_dir/shell/gradle/upgrade_gradle.sh $target_dir/upgrade_gradle
+for i in common ops; do
+    ls $SCRIPT_SHELL_HOME/$i | while read j; do
+        [[ $i != \*.sh ]] && continue
+        source "$SCRIPT_SHELL_HOME/$i/$j"
+    done
+done
 
-# docker
-ln -s $source_dir/shell/docker/docker_build.sh $target_dir/docker_build
-
+while read i; do
+   [[ $i = \#* ]] && continue
+   source "$SCRIPT_SHELL_HOME/$i"
+done <<EOF
+dev/add_gradle_submodule.sh
+dev/deploy_war_to_tomcat.sh
+dev/init_gradle_java_project.sh
+dev/upgrade_gradle.sh
+os/recurse_dir.sh
+text/wc_code_line.sh
+EOF

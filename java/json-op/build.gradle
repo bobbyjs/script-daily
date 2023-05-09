@@ -1,5 +1,5 @@
 dependencies {
-    implementation "org.dreamcat:common-x:0.2.1"
+    implementation "org.dreamcat:common-json:0.3"
     implementation "org.slf4j:slf4j-simple:$slf4jVersion"
 }
 

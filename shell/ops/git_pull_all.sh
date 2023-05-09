@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-function git_clone_all() {
-    [[ -z "$1" ]] && (echo "usage: git_clone_all [dir] [-y]" && return 1)
+function git_pull_all() {
+    [[ -z "$1" ]] && (echo "usage: git_pull_all [dir] [-y]" && return 1)
     cd "$1"
     work_dir=$(pwd -P)
 
@@ -21,4 +21,4 @@ function git_clone_all() {
     done
 }
 
-if [ $# != 0 ]; then git_clone_all $@; fi
+if [ $# != 0 ]; then git_pull_all $@; fi

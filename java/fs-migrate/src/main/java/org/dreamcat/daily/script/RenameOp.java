@@ -4,7 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.dreamcat.common.io.FileUtil;
-import org.dreamcat.common.text.argparse.ArgParser;
+import org.dreamcat.common.argparse.ArgParser;
 
 /**
  * Create by tuke on 2021/4/5

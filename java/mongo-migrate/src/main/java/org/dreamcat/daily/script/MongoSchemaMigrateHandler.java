@@ -5,7 +5,7 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.common.x.jackson.JsonUtil;
+import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.daily.script.common.SchemaHandler;
 import org.springframework.data.mongodb.core.MongoTemplate;
 

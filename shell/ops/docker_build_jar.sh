@@ -94,5 +94,4 @@ function docker_build_jar() {
     echo "Done"
 }
 
-# if [ $# != 0 ]; then docker_build_jar $@; fi
-
+ if [ $# != 0 ]; then docker_build_jar $@; fi

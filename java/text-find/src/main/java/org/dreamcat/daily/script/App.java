@@ -3,7 +3,7 @@ package org.dreamcat.daily.script;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Predicate;
-import org.dreamcat.common.io.ClassPathUtil;
+import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.daily.script.poetry.ChinesePoetryFinder;
 
 /**

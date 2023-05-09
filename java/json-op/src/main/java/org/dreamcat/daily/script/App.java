@@ -1,14 +1,12 @@
 package org.dreamcat.daily.script;
 
 import java.io.IOException;
-import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.common.io.ClassPathUtil;
+import org.dreamcat.common.util.ClassPathUtil;
 
 /**
  * @author Jerry Will
  * @version 2021-06-15
  */
-@Slf4j
 public class App {
 
     static final String USAGE;
@@ -26,6 +24,10 @@ public class App {
 
         String command = args[0];
         switch (command) {
+            case "-h":
+            case "--help":
+                System.out.println(USAGE);
+                return;
             case "compare":
             case "compare:print":
                 CompareJsonHandler.print(args);

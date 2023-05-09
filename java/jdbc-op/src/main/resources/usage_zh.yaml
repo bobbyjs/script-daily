@@ -1,0 +1,81 @@
+subcommandsTitle: 子命令：
+paramsTitle: 参数：
+optionsTitle: 选项：
+identWidth: 2
+
+header: jdbc-op jdbc命令行工具
+
+helpDesc:
+  help: 打印此帮助
+
+subcommands:
+  insert-random:
+    commandDesc: 向指定表插入随机数据
+    header: "jdbc-op insert-random 向指定表插入随机数据\n例子：jdbc-op insert-random test_table --jdbc-url jdbc:mysql://127.0.0.1:3306/test_db \
+           -uroot -proot -d /path/to/mysql-jdbc-driver.jar -n10 -i id ctime mtime"
+    helpParam:
+      batchSize: n
+      rowNum: n
+    helpDesc:
+      help: 打印此帮助
+      tableName: 数据表名，例如：my_table, my_db.my_table
+      jdbcUrl: JDBC url
+      user: JDBC user
+      password: JDBC password
+      properties: 额外的jdbc参数
+      driverPath: JDBC驱动jar包路径
+      driverClassName: JDBC驱动全限定类名
+      yes: 是否实际执行SQL
+      ignoredColumns: 忽略的列，可以传入多个值
+      batchSize: 批量插入的大小限制，即生成的values的最大行数
+      rowNum: 插入的总行数
+
+  type-table:
+    commandDesc: 通过指定的类型生成相应的表和数据
+    header: "jdbc-op type-table 通过指定的类型生成相应的表和数据\n例子：jdbc-op typed-table t_all_type -t int double date"
+    helpParam:
+      types: <type1 type2 ...>
+      partitionTypes: <type1 type2 ...>
+      columnCommentSql: sql
+      batchSize: n
+      rowNum: n
+    helpDesc:
+      help: 打印此帮助
+      tableName: 数据表名，例如：my_table, my_db.my_table
+      file: "描述列类型文件，以换行符\\n分隔\n${ls}例如：int, varchar(%d), decimal(%d, %d)，如要指定为分区"
+      types: 列类型，可以传入多个值，与-f互斥，优先取-f的值
+      partitionTypes: 分区类型
+      commentAlone: 是否生成额外的comment sql
+      columnCommentSql: "comment sql模板\n${ls}例如：comment on column $table.$column is 'Column Type: $type';\n${ls}或者：Column Type: $type"
+      compact: 紧凑模式，SQL不换行
+      extraColumnDdl: 额外的需要创建的列SQL
+      tableDdlSuffix: 自定义的建表SQL后缀
+      batchSize: 批量插入的大小限制，即生成的values的最大行数
+      rowNum: 插入的总行数
+  batch-type-table:
+    commandDesc: 批量生成数据表和数据
+    header: "jdbc-op batch-type-table 批量生成数据表和数据\n例子：jdbc-op batch-type-table -t bigint timestamp string"
+    helpParam:
+      types: <type1 type2 ...>
+      combinationMode: <m1 m2 m3-m4 m5 ...>
+      combinationRepeat: n
+      columnCommentSql: sql
+      batchSize: n
+      rowNum: n
+    helpDesc:
+      help: 打印此帮助
+      file: 描述列类型文件，每行表示一张表，类型以,分隔，逗号附近可以有空格
+      types: 列类型，可以传入多个值，与-f互斥，优先取-f的值
+      combinationMode: "仅对-t生效，表示使用-t指定的类型生成组合\n${ls}比如类型一共有9个，combinationMode取值为[3, 6-8]\n${ls}则表示9分别取3、6、7、8的组合，对于每种可能的组合生成对应的表"
+      combinationRepeat: 每种组合的重复次数
+      tableNamePrefix: 表名模板，例如：test.t_table_%d
+      tableNameOffset: tableNamePrefix中%d的起始偏移量
+      ignoreError: 执行SQL失败之后是否忽略错误继续
+      outputFile: 文件名，保存SQL至文件
+      outputFileSqlMaxCount: "分文件保存，每个文件的最大SQL数\n${ls}outputFile取a.sql，则生成a1.sql, a2.sql ..."
+      commentAlone: 见jdbc-op type-table --help
+      columnCommentSql: 见jdbc-op type-table --help
+      tableDdlSuffix: 见jdbc-op type-table --help
+      extraColumnDdl: 见jdbc-op type-table --help
+      batchSize: 见jdbc-op type-table --help
+      rowNum: 见jdbc-op type-table --help

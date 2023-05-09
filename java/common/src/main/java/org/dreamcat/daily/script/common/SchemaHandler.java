@@ -4,8 +4,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.dreamcat.common.text.argparse.ArgParseException;
-import org.dreamcat.common.text.argparse.ArgParser;
+import org.dreamcat.common.argparse.ArgParseException;
+import org.dreamcat.common.argparse.ArgParser;
 import org.dreamcat.common.util.ObjectUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +58,7 @@ public abstract class SchemaHandler<T> {
     }
 
     protected ArgParser defineArgs() {
-        ArgParser argParser = ArgParser.create();
+        ArgParser argParser = new ArgParser();
         argParser.addList("include", "i", "include");
         argParser.addList("exclude", "e", "exclude");
         argParser.addBool("verbose", "v", "verbose");

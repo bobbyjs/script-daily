@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.dreamcat.common.text.argparse.ArgParser;
+import org.dreamcat.common.argparse.ArgParser;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.common.SchemaMigrateHandler;
 

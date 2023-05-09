@@ -1,6 +1,6 @@
 package org.dreamcat.daily.script.common;
 
-import org.dreamcat.common.text.argparse.ArgParser;
+import org.dreamcat.common.argparse.ArgParser;
 
 /**
  * Create by tuke on 2021/3/22

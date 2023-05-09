@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
 
-function info() {
-    echo -e "\033[32m$@\033[0m"
-}
-
-function warn() {
-    echo -e "\033[33m$@\033[0m"
-}
-
-function error() {
-    echo -e "\033[31m$@\033[0m"
-}
-
 function deploy_war_to_tomcat () {
     CATALINA_BASE=$1
     if [ "x" = "x$CATALINA_BASE" ]; then
@@ -65,6 +53,4 @@ function deploy_war_to_tomcat () {
 }
 
 # don't call it via source the script
-if [ $# != 0 ]; then
-    deploy_war_to_tomcat $@
-fi
+if [ $# != 0 ]; then deploy_war_to_tomcat $@; fi

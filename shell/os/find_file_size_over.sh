@@ -6,7 +6,7 @@ function find_file_size_over() {
     min_size=$2
 
     # default 1M
-    if [ -z "$min_size" ]; then min_size$((1024*1024)); fi
+    if [ -z "$min_size" ]; then min_size=1048576; fi
 
     size=`ls -l $file | awk '{print $5}'`
     if [[ $size -gt $min_size ]]; then
