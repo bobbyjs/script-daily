@@ -3,7 +3,7 @@ package org.dreamcat.daily.script;
 import java.io.IOException;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.common.io.ClassPathUtil;
+import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.daily.script.common.SchemaHandler;
 
 /**
