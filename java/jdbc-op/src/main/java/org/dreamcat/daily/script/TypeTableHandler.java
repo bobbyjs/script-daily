@@ -1,6 +1,8 @@
 package org.dreamcat.daily.script;
 
 import static org.dreamcat.common.util.RandomUtil.randi;
+import static org.dreamcat.common.util.RandomUtil.timeBaseRadix36W16;
+import static org.dreamcat.common.util.RandomUtil.uuid32;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +24,7 @@ import org.dreamcat.common.sql.JdbcTypeRandomInstance;
 import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.CollectionUtil;
 import org.dreamcat.common.util.MapUtil;
+import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
 
 /**
@@ -79,11 +82,11 @@ public class TypeTableHandler implements Base {
             return;
         }
 
-        if (StringUtil.isBlank(file) && CollectionUtil.isEmpty(types)) {
+        if (ObjectUtil.isBlank(file) && ObjectUtil.isEmpty(types)) {
             System.err.println("required arg: -f|--file <file> or -t|--types <t1> <t2>,...");
             System.exit(1);
         }
-        if (StringUtil.isNotBlank(file)) {
+        if (ObjectUtil.isNotBlank(file)) {
             types = FileUtil.readAsList(file).stream()
                     .filter(StringUtil::isNotBlank)
                     .map(String::trim)
@@ -96,9 +99,12 @@ public class TypeTableHandler implements Base {
                     })
                     .map(String::trim).collect(Collectors.toList());
         }
-        if (CollectionUtil.isEmpty(types)) {
+        if (ObjectUtil.isEmpty(types)) {
             System.err.println("at least one type is required in file " + file);
             System.exit(1);
+        }
+        if (ObjectUtil.isBlank(tableName)) {
+            tableName = "t_" + uuid32().substring(16);
         }
 
         List<String> sqlList = genSql();
