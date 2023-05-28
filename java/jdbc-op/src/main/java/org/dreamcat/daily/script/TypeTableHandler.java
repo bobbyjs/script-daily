@@ -1,10 +1,10 @@
 package org.dreamcat.daily.script;
 
 import static org.dreamcat.common.util.RandomUtil.randi;
-import static org.dreamcat.common.util.RandomUtil.timeBaseRadix36W16;
 import static org.dreamcat.common.util.RandomUtil.uuid32;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.dreamcat.common.Pair;
+import org.dreamcat.common.Triple;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserInject;
 import org.dreamcat.common.argparse.ArgParserInject.InjectMethod;
@@ -74,9 +75,12 @@ public class TypeTableHandler implements Base {
     private boolean debug;
     @ArgParserField(firstChar = true)
     private boolean help;
+    @ArgParserField
+    private String setEnumValues = "a,b,c";
 
     @ArgParserInject(method = InjectMethod.Action)
-    public void run(TypeArgParser argParser,  @ArgParserInject(param = InjectParam.Help) String helpInfo) throws Exception {
+    public void run(TypeArgParser argParser, @ArgParserInject(param = InjectParam.Help) String helpInfo)
+            throws Exception {
         if (help) {
             System.out.println(helpInfo);
             return;
@@ -104,7 +108,7 @@ public class TypeTableHandler implements Base {
             System.exit(1);
         }
         if (ObjectUtil.isBlank(tableName)) {
-            tableName = "t_" + uuid32().substring(16);
+            tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
         }
 
         List<String> sqlList = genSql();
@@ -178,15 +182,14 @@ public class TypeTableHandler implements Base {
         return sqlList;
     }
 
-    private Pair<String, String> getType(String type) {
+    // typeName(for generator), typeVal(for sql type), columnName(no prefix c_ or p_)
+    private Triple<String, String, String> getType(String type) {
         String typeName = type, typeVal = type;
         if (type.equals("set") || type.equals("enum")) {
-            int n = randi(2, randomInstance.maxArrayLength() + 1);
-            typeVal = String.format("%s(%s)", type, IntStream.range(0, 3 * n + 2)
-                    .mapToObj(i -> randomInstance.generateLiteral("string"))
-                    .distinct().limit(randi(1, n))
+            typeVal = String.format("%s(%s)", type, Arrays.stream(setEnumValues.split(","))
+                    .map(it -> "'" + it + "'")
                     .collect(Collectors.joining(",")));
-            return Pair.of(typeVal, typeVal);
+            return Triple.of(typeVal, typeVal, type);
         }
 
         int d = type.split("%d").length;
@@ -203,25 +206,26 @@ public class TypeTableHandler implements Base {
                 .replace("(", "")
                 .replace(")", "")
                 .replace(",", "");
-        return Pair.of(typeName, typeVal);
-    }
-
-    private String fillColSql(String type, List<String> columnNames, List<String> columnCommentSqlList) {
-        Pair<String, String> pair = getType(type);
-        String col = "c_" + pair.first()
+        String columnName = typeName
                 .replace(' ', '_')
                 .replace(',', '_')
                 .replace("(", "_")
                 .replace(")", "")
                 .replace("'", "");
+        return Triple.of(typeName, typeVal, columnName);
+    }
+
+    private String fillColSql(String type, List<String> columnNames, List<String> columnCommentSqlList) {
+        Triple<String, String, String> triple = getType(type);
+        String col = "c_" + triple.third();
         columnNames.add(col);
         col = formatColumnName(col);
         Map<String, Object> ctx = MapUtil.of(
                 "table", tableName,
                 "column", col,
-                "type", pair.second());
+                "type", triple.second());
 
-        col = col + " " + pair.second();
+        col = col + " " + triple.second();
         if (!compact) col = "    " + col;
 
         if (StringUtil.isNotBlank(columnCommentSql)) {
@@ -265,10 +269,10 @@ public class TypeTableHandler implements Base {
         if (CollectionUtil.isEmpty(partitionTypes)) return "";
         List<String> list = new ArrayList<>();
         for (String partitionType : partitionTypes) {
-            Pair<String, String> pair = getType(partitionType);
-            String columnName = "p_" + pair.first().replace(' ', '_');
+            Triple<String, String, String> triple = getType(partitionType);
+            String columnName = "p_" + triple.third();
             if (!compact) columnName = "    " + columnName;
-            list.add(columnName + " " + pair.second());
+            list.add(columnName + " " + triple.second());
         }
         return String.format("partitioned by (%s%s%s)", sep, String.join(
                 "," + sep, list), sep);
@@ -278,9 +282,9 @@ public class TypeTableHandler implements Base {
         if (CollectionUtil.isEmpty(partitionTypes)) return "";
         List<String> list = new ArrayList<>();
         for (String partitionType : partitionTypes) {
-            Pair<String, String> pair = getType(partitionType);
-            String columnName = "p_" + pair.first().replace(' ', '_');
-            list.add(columnName + "=" + randomInstance.generateLiteral(pair.second()));
+            Triple<String, String, String> triple = getType(partitionType);
+            String columnName = "p_" + triple.third();
+            list.add(columnName + "=" + randomInstance.generateLiteral(triple.first()));
         }
         return String.format(" partition(%s)", String.join(",", list));
     }
