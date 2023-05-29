@@ -3,7 +3,7 @@ package org.dreamcat.daily.script;
 import static org.dreamcat.common.util.RandomUtil.choose36;
 import static org.dreamcat.common.util.RandomUtil.rand;
 import static org.dreamcat.common.util.RandomUtil.randi;
-import static org.dreamcat.daily.script.Util.fromJdbcType;
+import static org.dreamcat.daily.script.util.Util.fromJdbcType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -19,15 +19,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.SneakyThrows;
 import org.dreamcat.common.Pair;
+import org.dreamcat.common.argparse.ArgParserContext;
+import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
-import org.dreamcat.common.argparse.ArgParserInject;
-import org.dreamcat.common.argparse.ArgParserInject.InjectMethod;
-import org.dreamcat.common.argparse.ArgParserInject.InjectParam;
 import org.dreamcat.common.argparse.ArgParserType;
-import org.dreamcat.common.argparse.TypeArgParser;
+import org.dreamcat.common.reflect.ObjectRandomGenerator;
 import org.dreamcat.common.reflect.ObjectType;
-import org.dreamcat.common.reflect.RandomInstance;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.sql.JdbcUtil;
 import org.dreamcat.common.util.DateUtil;
@@ -41,7 +40,8 @@ import org.dreamcat.common.util.StringUtil;
  */
 @ArgParserType(firstChar = true, allProperties = true,
         command = "insert-random")
-public class InsertRandomHandler extends BaseJdbcHandler {
+public class InsertRandomHandler extends BaseJdbcHandler
+    implements ArgParserEntrypoint<InsertRandomHandler> {
 
     @ArgParserField(required = true, position = 0)
     private String tableName;
@@ -54,10 +54,11 @@ public class InsertRandomHandler extends BaseJdbcHandler {
     @ArgParserField(firstChar = true)
     private boolean help;
 
-    @ArgParserInject(method = InjectMethod.Action)
-    public void run(@ArgParserInject(param = InjectParam.Help) String helpInfo) throws Exception {
+    @SneakyThrows
+    @Override
+    public void run(ArgParserContext<InsertRandomHandler> context) {
         if (help) {
-            System.out.println(helpInfo);
+            System.out.println(context.getHelp());
             return;
         }
         if (tableName == null) {
@@ -102,7 +103,7 @@ public class InsertRandomHandler extends BaseJdbcHandler {
     private String randomValues(List<ObjectType> needInsertColumnTypes, int n) {
         String valuesStr = IntStream.range(0, n)
                 .mapToObj(i -> needInsertColumnTypes.stream()
-                        .map(randomInstance::generate)
+                        .map(gen::generate)
                         .map(this::convertValue)
                         .collect(Collectors.joining(", ")))
                 .collect(Collectors.joining("), ("));
@@ -154,13 +155,13 @@ public class InsertRandomHandler extends BaseJdbcHandler {
 
     /// randomInstance
 
-    private static final RandomInstance randomInstance = new RandomInstance();
+    private static final ObjectRandomGenerator gen = new ObjectRandomGenerator();
     static {
-        randomInstance.register(() -> randi(0, 127), byte.class, Byte.class, short.class, Short.class,
+        gen.register(() -> randi(0, 127), byte.class, Byte.class, short.class, Short.class,
                 int.class, Integer.class, long.class, Long.class, BigInteger.class);
-        randomInstance.register(() -> rand(0, 256), float.class, Float.class, double.class, Double.class,
+        gen.register(() -> rand(0, 256), float.class, Float.class, double.class, Double.class,
                 BigDecimal.class);
-        randomInstance.register(randomInstance.getDefaultGen(Date.class), java.sql.Date.class);
-        randomInstance.register(() -> choose36(randi(1, 8)), byte[].class);
+        gen.register(gen.getDefaultFn(Date.class), java.sql.Date.class);
+        gen.register(() -> choose36(randi(1, 8)), byte[].class);
     }
 }

@@ -1,9 +1,8 @@
 package org.dreamcat.daily.script;
 
 import java.io.IOException;
-import org.dreamcat.common.argparse.ArgParserInject;
-import org.dreamcat.common.argparse.ArgParserInject.InjectMethod;
-import org.dreamcat.common.argparse.ArgParserInject.InjectParam;
+import org.dreamcat.common.argparse.ArgParserContext;
+import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.argparse.SubcommandArgParser;
 import org.dreamcat.common.argparse.SubcommandHelpInfo;
@@ -22,9 +21,10 @@ import org.dreamcat.common.util.SystemUtil;
                 InsertRandomHandler.class,
                 TypeTableHandler.class,
                 BatchTypeTableHandler.class,
+                HbaseTypeTableHandler.class,
         }
 )
-public class App implements Base {
+public class App implements ArgParserEntrypoint<App> {
 
     boolean help;
 
@@ -47,14 +47,14 @@ public class App implements Base {
         return YamlUtil.fromJson(ClassPathUtil.getResourceAsString(name), SubcommandHelpInfo.class);
     }
 
-    @ArgParserInject(method = InjectMethod.Action)
-    public void run(@ArgParserInject(param = InjectParam.Help) String helpInfo) {
+    @Override
+    public void run(ArgParserContext<App> context) {
         if (help) {
-            System.out.println(helpInfo);
+            System.out.println(context.getHelp());
             return;
         }
         System.err.println("require a subcommand");
-        System.err.println("rustup: try 'jdbc-op --help' for more information");
+        System.err.println("jdbc-op: try 'jdbc-op --help' for more information");
         System.exit(1);
     }
 }

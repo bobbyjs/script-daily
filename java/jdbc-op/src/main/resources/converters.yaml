@@ -1,0 +1,21 @@
+pg,postgres,postgresql:
+  - template: $value::$type
+    types:
+      - bit
+sqlserver:
+  - template: convert($type, $value)
+    types:
+      - binary
+      - varbinary
+db2:
+  - template: cast($value as $type)
+    types:
+      - binary
+      - varbinary
+      - blob
+oracle:
+  # https://forums.oracle.com/ords/apexds/post/inserting-value-into-long-raw-column-8501
+  - template: utl_raw.cast_to_raw($value)
+    types:
+      - raw
+      - long raw

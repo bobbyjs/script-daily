@@ -1,4 +1,4 @@
-package org.dreamcat.daily.script;
+package org.dreamcat.daily.script.util;
 
 import static org.dreamcat.common.reflect.ObjectType.fromArrayType;
 import static org.dreamcat.common.reflect.ObjectType.fromType;

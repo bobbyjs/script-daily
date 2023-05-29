@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.SneakyThrows;
+import org.dreamcat.common.argparse.ArgParserContext;
+import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
-import org.dreamcat.common.argparse.ArgParserInject;
-import org.dreamcat.common.argparse.ArgParserInject.InjectMethod;
-import org.dreamcat.common.argparse.ArgParserInject.InjectParam;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.math.CombinationUtil;
@@ -30,7 +30,8 @@ import org.dreamcat.common.util.StringUtil;
  */
 @ArgParserType(firstChar = true, allProperties = true,
         command = "batch-type-table")
-public class BatchTypeTableHandler extends BaseJdbcHandler {
+public class BatchTypeTableHandler extends BaseJdbcHandler
+        implements ArgParserEntrypoint<BatchTypeTableHandler> {
 
     String file;
     Set<String> types; // combination
@@ -53,8 +54,12 @@ public class BatchTypeTableHandler extends BaseJdbcHandler {
     boolean commentAlone;
     @ArgParserField
     String columnCommentSql;
+    @ArgParserField({"S"})
+    private Set<String> dataSourceType;
     @ArgParserField
-    boolean postgresStyle;
+    private String converterFile;
+    // binary:cast($value as $type)
+    private Set<String> converters;
     @ArgParserField
     boolean doubleQuota; // "c1" or `c2`
     @ArgParserField
@@ -73,10 +78,11 @@ public class BatchTypeTableHandler extends BaseJdbcHandler {
     transient int outputFileOffset = 1;
     transient int outputFileSqlCount; //
 
-    @ArgParserInject(method = InjectMethod.Action)
-    public void run(@ArgParserInject(param = InjectParam.Help) String helpInfo) throws Exception {
+    @Override
+    @SneakyThrows
+    public void run(ArgParserContext<BatchTypeTableHandler> context) {
         if (help) {
-            System.out.println(helpInfo);
+            System.out.println(context.getHelp());
             return;
         }
         if (StringUtil.isBlank(file) && CollectionUtil.isEmpty(types)) {
@@ -154,13 +160,16 @@ public class BatchTypeTableHandler extends BaseJdbcHandler {
                 .tableName(tableName)
                 .commentAlone(commentAlone)
                 .columnCommentSql(columnCommentSql)
-                .postgresStyle(postgresStyle)
+                .dataSourceType(dataSourceType)
+                .converterFile(converterFile)
+                .converters(converters)
                 .doubleQuota(doubleQuota)
                 .tableDdlSuffix(tableDdlSuffix)
                 .extraColumnDdl(extraColumnDdl)
                 .batchSize(batchSize)
                 .rowNum(rowNum)
                 .debug(debug);
+        typeTableHandler.afterPropertySet();
         List<String> sqlList = typeTableHandler.genSql();
         if (!yes) {
             output(sqlList);

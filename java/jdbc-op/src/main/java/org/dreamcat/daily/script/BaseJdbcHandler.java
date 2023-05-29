@@ -17,7 +17,7 @@ import org.dreamcat.daily.script.common.CliUtil;
  * @author Jerry Will
  * @version 2023-03-30
  */
-public class BaseJdbcHandler implements Base {
+public class BaseJdbcHandler {
 
     String jdbcUrl;
     String user;
