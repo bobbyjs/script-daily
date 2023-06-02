@@ -58,7 +58,7 @@ class TypedTableHandlerTest {
 
         List<String> args = new ArrayList<>();
         args.addAll(Arrays.asList("type-table", "my_table",
-                "--table-ddl-suffix", "engine = MergeTree order by c_UUID",
+                "--table-ddl-suffix", "engine = MergeTree order by c_uuid",
                 "--column-quotation",
                 "-t"));
         args.addAll(Arrays.asList(ClassPathUtil.getResourceAsString(
