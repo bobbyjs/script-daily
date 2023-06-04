@@ -1,5 +1,6 @@
 pg,postgres,postgresql:
-  - template: $value::$type
+  # or: cast($value as $type(16))
+  - template: $value::$type(16)
     types:
       - bit
 sqlserver:

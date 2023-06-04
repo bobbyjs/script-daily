@@ -22,12 +22,18 @@ public class TypeInfo {
     private String typeName; // sql type
     private String typeId; // generator
 
+    // type: such as `$type` or `$type: $mappingType`
     public TypeInfo(String type, String setEnumValues) {
+        String[] tt = type.split(":");
+        if (tt.length > 1) {
+            type = tt[0].trim();
+            this.columnName = tt[1].trim();
+        }
         if (Arrays.asList("set", "enum", "enum8", "enum16").contains(type.toLowerCase())) {
             this.typeName = this.typeId = String.format("%s(%s)", type, Arrays.stream(setEnumValues.split(","))
                     .map(it -> "'" + it + "'")
                     .collect(Collectors.joining(",")));
-            this.columnName = type;
+            if (this.columnName == null) this.columnName = type;
             return;
         }
 
@@ -47,11 +53,13 @@ public class TypeInfo {
                 .replace("(", "")
                 .replace(")", "")
                 .replaceAll(",[ ]*", "");
-        this.columnName = this.typeId
-                .replace(' ', '_')
-                .replace(',', '_')
-                .replace("(", "_")
-                .replace(")", "")
-                .replace("'", "");
+        if (this.columnName == null) {
+            this.columnName = this.typeId
+                    .replace(' ', '_')
+                    .replace(',', '_')
+                    .replace("(", "_")
+                    .replace(")", "")
+                    .replace("'", "");
+        }
     }
 }

@@ -55,7 +55,7 @@ public class BatchTypeTableHandler extends BaseJdbcHandler
     @ArgParserField
     String columnCommentSql;
     @ArgParserField({"S"})
-    private Set<String> dataSourceType;
+    private String dataSourceType;
     @ArgParserField
     private String converterFile;
     // binary:cast($value as $type)
@@ -63,7 +63,7 @@ public class BatchTypeTableHandler extends BaseJdbcHandler
     @ArgParserField
     boolean doubleQuota; // "c1" or `c2`
     @ArgParserField
-    String tableDdlSuffix;
+    String tableSuffixSql;
     @ArgParserField
     String extraColumnDdl;
     @ArgParserField({"b"})
@@ -164,8 +164,8 @@ public class BatchTypeTableHandler extends BaseJdbcHandler
                 .converterFile(converterFile)
                 .converters(converters)
                 .doubleQuota(doubleQuota)
-                .tableDdlSuffix(tableDdlSuffix)
-                .extraColumnDdl(extraColumnDdl)
+                .tableSuffixSql(tableSuffixSql)
+                .extraColumnSql(extraColumnDdl)
                 .batchSize(batchSize)
                 .rowNum(rowNum)
                 .debug(debug);

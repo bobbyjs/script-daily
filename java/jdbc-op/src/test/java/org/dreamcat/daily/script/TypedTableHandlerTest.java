@@ -67,6 +67,17 @@ class TypedTableHandlerTest {
         SubcommandArgParser argParser = new SubcommandArgParser(App.class);
         argParser.run(args);
     }
+
+    @Test
+    void testPresto() throws Exception {
+        List<String> args = Arrays.asList("type-table", "test.my_table", "--quota", "--debug",
+                "--extra-column-sql", "id bigint(20) not null auto_increment primary key",
+                "-c", "Column Type: $type",
+                "-C", "${type}_col_$index", "-P", "p_${type}_col_$index",
+                "-F", ClassPathUtil.getResourceAsString("presto-mapping-types.txt"));
+        SubcommandArgParser argParser = new SubcommandArgParser(App.class);
+        argParser.run(args);
+    }
 }
 /*
 

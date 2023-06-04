@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
-import org.dreamcat.common.Triple;
+import org.dreamcat.common.MutableInt;
 import org.dreamcat.common.argparse.ArgParserContext;
 import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
@@ -49,6 +49,8 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
     // decimal(%d, %d)
     @ArgParserField("f")
     private String file;
+    @ArgParserField("F")
+    private String fromContent;
     @ArgParserField("t")
     private List<String> types;
     @ArgParserField("p")
@@ -56,8 +58,13 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
 
     @ArgParserField(required = true, position = 0)
     private String tableName;
+    @ArgParserField("C")
+    private String columnNameTemplate = "c_$type";
+    @ArgParserField("P")
+    private String partitionColumnNameTemplate = "p_$type";
+
     private boolean compact;
-    private boolean columnQuotation;
+    private boolean quota;
     // comment on column, or c int comment
     // default use mysql column comment style
     private boolean commentAlone;
@@ -66,15 +73,16 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
     @ArgParserField("c")
     private String columnCommentSql;
     // postgresql, mysql, oracle, db2, sqlserver, and so on
+    private boolean doubleQuota; // "c1" or `c2`
+    private String tableSuffixSql;
+    private String extraColumnSql;
+
     @ArgParserField("S")
-    private Set<String> dataSourceType;
+    private String dataSourceType;
     private String converterFile;
     // binary:cast($value as $type)
     private Set<String> converters;
 
-    private boolean doubleQuota; // "c1" or `c2`
-    private String tableDdlSuffix;
-    private String extraColumnDdl;
     @ArgParserField({"b"})
     private int batchSize = 1;
     @ArgParserField({"n"})
@@ -84,6 +92,12 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
     private boolean help;
     private String setEnumValues = "a,b,c,d";
 
+    // mappingType -> types
+    transient Map<String, List<String>> mappingTypes;
+    transient Map<String, List<String>> mappingPartitionTypes;
+    transient Map<String, MutableInt> columnNameCounter = new HashMap<>();
+    transient Map<String, MutableInt> partitionColumnNameCounter = new HashMap<>();
+
     @SneakyThrows
     @Override
     public void run(ArgParserContext<TypeTableHandler> context) {
@@ -92,12 +106,19 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
             return;
         }
 
-        if (ObjectUtil.isBlank(file) && ObjectUtil.isEmpty(types)) {
-            System.err.println("required arg: -f|--file <file> or -t|--types <t1> <t2>,...");
+        if (ObjectUtil.isBlank(file) && ObjectUtil.isEmpty(types) &&
+                ObjectUtil.isEmpty(fromContent)) {
+            System.err.println("required arg: -f|--file <file> or -t|--types <t1> <t2>... | or -F <content>");
             System.exit(1);
         }
-        if (ObjectUtil.isNotBlank(file)) {
-            types = FileUtil.readAsList(file).stream()
+        if (ObjectUtil.isNotBlank(file) || ObjectUtil.isNotBlank(fromContent)) {
+            List<String> lines;
+            if (ObjectUtil.isNotBlank(file)) {
+                lines = FileUtil.readAsList(file);
+            } else {
+                lines = Arrays.asList(fromContent.split("\n"));
+            }
+            types = lines.stream()
                     .filter(StringUtil::isNotBlank)
                     .map(String::trim)
                     .filter(it -> {
@@ -109,6 +130,7 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
                     })
                     .map(String::trim).collect(Collectors.toList());
         }
+
         if (ObjectUtil.isEmpty(types)) {
             System.err.println("at least one type is required in file " + file);
             System.exit(1);
@@ -154,7 +176,7 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
             registerConvertor(type, template);
         }
 
-        if (isPostgresStyle()) {
+        if (Arrays.asList("pg", "postgres", "postgresql").contains(dataSourceType)) {
             if (StringUtil.isNotBlank(columnCommentSql) && !columnCommentSql.trim().startsWith("comment on column")) {
                 columnCommentSql = String.format("comment on column $table.$column is '%s'", columnCommentSql);
                 commentAlone = true; // since use postgres style
@@ -170,14 +192,12 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
                 if (StringUtil.isNotEmpty(ds)) map.put(ds, v);
             }
         });
-        for (String ds : dataSourceType) {
-            List<ConverterInfo> converterInfos = map.get(ds);
-            if (converterInfos == null) continue;
+        List<ConverterInfo> converterInfos = map.get(dataSourceType);
+        if (converterInfos == null) return;
 
-            for (ConverterInfo converterInfo : converterInfos) {
-                for (String type : converterInfo.getTypes()) {
-                    registerConvertor(type, converterInfo.getTemplate());
-                }
+        for (ConverterInfo converterInfo : converterInfos) {
+            for (String type : converterInfo.getTypes()) {
+                registerConvertor(type, converterInfo.getTemplate());
             }
         }
     }
@@ -207,14 +227,15 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
         String cols = types.stream().map(type -> this.fillColSql(type, columnNames, columnCommentSqlList))
                 .collect(Collectors.joining("," + sep));
         createTableSql.append("create table ").append(tableName).append(" (").append(sep);
-        if (StringUtil.isNotBlank(extraColumnDdl)) {
-            createTableSql.append("    ").append(extraColumnDdl).append(",").append(sep);
+        if (StringUtil.isNotBlank(extraColumnSql)) {
+            createTableSql.append("    ").append(extraColumnSql).append(",").append(sep);
         }
         createTableSql.append(cols).append(sep).append(")");
-        String partitionDefSql = getPartitionDefSql(sep);
+        List<String> partitionColumnNames = new ArrayList<>();
+        String partitionDefSql = getPartitionDefSql(partitionColumnNames, sep);
         if (StringUtil.isNotEmpty(partitionDefSql)) createTableSql.append(" ").append(partitionDefSql);
-        if (StringUtil.isNotBlank(tableDdlSuffix)) {
-            createTableSql.append(" ").append(tableDdlSuffix);
+        if (StringUtil.isNotBlank(tableSuffixSql)) {
+            createTableSql.append(" ").append(tableSuffixSql);
         }
         createTableSql.append(";");
         sqlList.add(createTableSql.toString());
@@ -230,26 +251,32 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
                 CollectionUtil.isEmpty(partitionTypes) ? "(" + columnNameSql + ")" : "");
         while (rowNum > batchSize) {
             rowNum -= batchSize;
-            sqlList.add(String.format(insertIntoSql, getPartitionValueSql(), getValues(batchSize)));
+            sqlList.add(String.format(insertIntoSql, getPartitionValueSql(partitionColumnNames), getValues(batchSize)));
         }
         if (rowNum > 0) {
-            sqlList.add(String.format(insertIntoSql, getPartitionValueSql(), getValues(rowNum)));
+            sqlList.add(String.format(insertIntoSql, getPartitionValueSql(partitionColumnNames), getValues(rowNum)));
         }
         return sqlList;
     }
 
     private String fillColSql(String type, List<String> columnNames, List<String> columnCommentSqlList) {
         TypeInfo typeInfo = new TypeInfo(type, setEnumValues);
-        String col = "c_" + typeInfo.getColumnName();
+
+        int index = columnNameCounter.computeIfAbsent(
+                typeInfo.getColumnName(), k -> new MutableInt(0)).incrAndGet();
+        String col = InterpolationUtil.format(columnNameTemplate,
+                "t", typeInfo.getColumnName(), "type", typeInfo.getColumnName(),
+                "i", index + "", "index", index + "");
         columnNames.add(col);
-        col = formatColumnName(col);
+
+        String columnDefSql = formatColumnName(col);
         Map<String, Object> ctx = MapUtil.of(
                 "table", tableName,
                 "column", col,
                 "type", typeInfo.getTypeName());
 
-        col = col + " " + typeInfo.getTypeName();
-        if (!compact) col = "    " + col;
+        columnDefSql = columnDefSql + " " + typeInfo.getTypeName();
+        if (!compact) columnDefSql = "    " + columnDefSql;
 
         if (StringUtil.isNotBlank(columnCommentSql)) {
             String comment = InterpolationUtil.format(columnCommentSql, ctx);
@@ -258,14 +285,14 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
                 ctx.put("comment", comment);
                 columnCommentSqlList.add(InterpolationUtil.format(columnCommentSql, ctx));
             } else {
-                col = String.format("%s comment '%s'", col, comment);
+                columnDefSql = String.format("%s comment '%s'", columnDefSql, comment);
             }
         }
-        return col;
+        return columnDefSql;
     }
 
     private String formatColumnName(String columnName) {
-        if (!columnQuotation) return columnName;
+        if (!quota) return columnName;
         return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
     }
 
@@ -281,37 +308,38 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
         }).collect(Collectors.joining(",")) + ")";
     }
 
-    private String getPartitionDefSql(String sep) {
+    private String getPartitionDefSql(List<String> partitionColumnNames, String sep) {
         if (CollectionUtil.isEmpty(partitionTypes)) return "";
         List<String> list = new ArrayList<>();
         for (String partitionType : partitionTypes) {
             TypeInfo typeInfo = new TypeInfo(partitionType, setEnumValues);
-            String columnName = "p_" + typeInfo.getColumnName();
-            if (!compact) columnName = "    " + columnName;
-            list.add(columnName + " " + typeInfo.getTypeName());
+            int index = partitionColumnNameCounter.computeIfAbsent(
+                    typeInfo.getColumnName(), k -> new MutableInt(0)).incrAndGet();
+            String columnName = InterpolationUtil.format(partitionColumnNameTemplate,
+                    "t", typeInfo.getColumnName(), "type", typeInfo.getColumnName(),
+                    "i", index + "", "index", index + "");
+            partitionColumnNames.add(columnName);
+            String columnDefSql = columnName;
+            if (!compact) columnDefSql = "    " + columnDefSql;
+            list.add(columnDefSql + " " + typeInfo.getTypeName());
         }
         return String.format("partitioned by (%s%s%s)", sep, String.join(
                 "," + sep, list), sep);
     }
 
-    private String getPartitionValueSql() {
+    private String getPartitionValueSql(List<String> partitionColumnNames) {
         if (CollectionUtil.isEmpty(partitionTypes)) return "";
         List<String> list = new ArrayList<>();
-        for (String partitionType : partitionTypes) {
-            TypeInfo typeInfo = new TypeInfo(partitionType, setEnumValues);
-            String columnName = "p_" + typeInfo.getColumnName();
+        for (int i = 0, size = partitionTypes.size(); i < size; i++) {
+            TypeInfo typeInfo = new TypeInfo(partitionTypes.get(i), setEnumValues);
+            String columnName = partitionColumnNames.get(i);
             list.add(columnName + "=" + gen.generateLiteral(typeInfo.getTypeId()));
         }
         return String.format(" partition(%s)", String.join(",", list));
     }
 
-    private boolean isPostgresStyle() {
-        return Stream.of("pg", "postgres", "postgresql")
-                .anyMatch(dataSourceType::contains);
-    }
-
     private final SqlValueRandomGenerator gen = new SqlValueRandomGenerator()
             .maxBitLength(1)
-            .addEnumAlias("enum8")
+            .addEnumAlias("enum8") // clickhouse
             .addEnumAlias("enum16");
 }
