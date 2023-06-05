@@ -50,7 +50,7 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
     @ArgParserField("f")
     private String file;
     @ArgParserField("F")
-    private String fromContent;
+    private String fileContent;
     @ArgParserField("t")
     private List<String> types;
     @ArgParserField("p")
@@ -64,7 +64,7 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
     private String partitionColumnNameTemplate = "p_$type";
 
     private boolean compact;
-    private boolean quota;
+    private boolean columnQuota;
     // comment on column, or c int comment
     // default use mysql column comment style
     private boolean commentAlone;
@@ -107,16 +107,16 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
         }
 
         if (ObjectUtil.isBlank(file) && ObjectUtil.isEmpty(types) &&
-                ObjectUtil.isEmpty(fromContent)) {
-            System.err.println("required arg: -f|--file <file> or -t|--types <t1> <t2>... | or -F <content>");
+                ObjectUtil.isEmpty(fileContent)) {
+            System.err.println("required arg: -f|--file <file> or -t|--types <t1> <t2>... or -F|--file-content <content>");
             System.exit(1);
         }
-        if (ObjectUtil.isNotBlank(file) || ObjectUtil.isNotBlank(fromContent)) {
+        if (ObjectUtil.isNotBlank(file) || ObjectUtil.isNotBlank(fileContent)) {
             List<String> lines;
             if (ObjectUtil.isNotBlank(file)) {
                 lines = FileUtil.readAsList(file);
             } else {
-                lines = Arrays.asList(fromContent.split("\n"));
+                lines = Arrays.asList(fileContent.split("\n"));
             }
             types = lines.stream()
                     .filter(StringUtil::isNotBlank)
@@ -292,7 +292,7 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
     }
 
     private String formatColumnName(String columnName) {
-        if (!quota) return columnName;
+        if (!columnQuota) return columnName;
         return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
     }
 

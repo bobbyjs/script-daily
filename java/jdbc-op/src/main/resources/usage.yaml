@@ -34,21 +34,29 @@ subcommands:
       types: <type1 type2 ...>
       partitionTypes: <type1 type2 ...>
       columnCommentSql: sql
-      batchSize: n
-      rowNum: n
+      batchSize: <n>
+      rowNum: <n>
     helpDesc:
       help: Print help information
+      debug: Print debug information
       tableName: "Table name，example: my_table, my_db.my_table"
-      file: "Describe the column type file, separated by newline \\n\n${ls} For example: int, varchar(%d), decimal(%d, %d), if you want to specify it as a partition"
+      file: "Describe the column type file, separated by newline \\n\n${ls}. For example: `int`, `varchar(%d)`, `@decimal(%d, %d)`; You can add the @ prefix to define the partition type"
+      fileContent: Describe the content of the column type file. The difference from --file is that the accepted parameter is the text content instead of the file name
       types: Column types, multiple values can be passed in, mutually exclusive with -f, the value of -f is preferred
       partitionTypes: Partition type
       commentAlone: Whether to generate additional comment sql
       columnCommentSql: "comment sql\n${ls}Example：comment on column $table.$column is 'Column Type: $type';\n${ls}Or：Column Type: $type"
       compact: Compact mode, SQL does not wrap
-      extraColumnDdl: Additional column SQL that needs to be created
-      tableDdlSuffix: Custom SQL suffix for table creation
+      extraColumnSql: Additional column SQL that needs to be created
+      tableSuffixSql: Custom SQL suffix for table creation
       batchSize: The size limit of batch insert, that is, the maximum number of rows of generated values
       rowNum: Total number of rows inserted
+      columnQuota: Whether to escape column names
+      doubleQuota: Whether the column name escape character is a double quote
+      dataSourceType: compatible data source, such as postgresql, mysql, oracle, db2, sqlserver
+      converters: "Literal conversion functions, example: binary:cast($value as $type)"
+      converterFile: "Specify the file of literal conversion functions, separated by newline character \\n"
+      setEnumValues: The enumeration value of set and enum type, the default is `a, b, c, d`
   batch-type-table:
     commandDesc: Generate data tables and data in batches
     header: "jdbc-op batch-type-table Generate data tables and data in batches\nExample: jdbc-op batch-type-table -t bigint timestamp string"

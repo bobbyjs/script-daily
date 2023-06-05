@@ -41,6 +41,7 @@ public class App implements ArgParserEntrypoint<App> {
         // only support: en, zh
         String lang = SystemUtil.getEnv("LANG", "en_US.UTF-8");
         String name = "usage.yaml";
+        // LANG=zh_CN.UTF-8 jdbc-op type-table -h
         if (lang.startsWith("zh")) {
             name = "usage_zh.yaml";
         }
