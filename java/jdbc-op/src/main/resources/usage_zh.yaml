@@ -2,11 +2,38 @@ subcommandsTitle: 子命令：
 paramsTitle: 参数：
 optionsTitle: 选项：
 identWidth: 2
+inheritAlways: true
 
 header: jdbc-op jdbc命令行工具
 
 helpDesc:
   help: 打印此帮助
+
+inheritHelpDesc:
+  help: 打印此帮助
+  debug: 打印debug信息
+  jdbcUrl: JDBC连接参数：JDBC URL 地址
+  user: JDBC连接参数：用户名
+  password: JDBC连接参数：密码
+  properties: 额外的jdbc参数
+  driverPath: JDBC驱动jar包所在目录
+  driverClass: JDBC驱动全限定类名
+  yes: 是否实际打开JDBC连接并执行SQL
+  columnName: 普通列名模板，例子：c_${type}_${index}
+  partitionColumnName: 分区列名模板，例子：p_${type}_${index}
+  commentAlone: 是否生成额外的comment sql
+  columnCommentSql: "comment sql模板\n${ls}例如：comment on column $table.$column is 'Column Type: $type';\n${ls}或者：Column Type: $type"
+  compact: 紧凑模式，SQL不换行
+  extraColumnSql: 额外的需要创建的列SQL
+  tableSuffixSql: 自定义的建表SQL后缀
+  batchSize: 批量插入的大小限制，即生成的values的最大行数
+  rowNum: 插入的总行数
+  columnQuota: 是否为列名转义
+  doubleQuota: 列名转义符是否为双引号
+  dataSourceType: 想要兼容的数据源，比如 postgresql, mysql, oracle, db2, sqlserver
+  converters: 字面量转换函数，例子：binary:cast($value as $type)
+  converterFile: "指定字面量转换函数的文件，以换行符\\n分隔"
+  setEnumValues: set和enum类型的枚举值，默认为a,b,c,d
 
 subcommands:
   insert-random:
@@ -19,13 +46,6 @@ subcommands:
     helpDesc:
       help: 打印此帮助
       tableName: 数据表名，例如：my_table, my_db.my_table
-      jdbcUrl: JDBC url
-      user: JDBC user
-      password: JDBC password
-      properties: 额外的jdbc参数
-      driverPath: JDBC驱动jar包路径
-      driverClassName: JDBC驱动全限定类名
-      yes: 是否实际执行SQL
       ignoredColumns: 忽略的列，可以传入多个值
       batchSize: 批量插入的大小限制，即生成的values的最大行数
       rowNum: 插入的总行数
@@ -40,28 +60,12 @@ subcommands:
       batchSize: <n>
       rowNum: <n>
     helpDesc:
-      help: 打印此帮助
-      debug: 打印debug信息
       tableName: 数据表名，例如：my_table, my_db.my_table
-      columnName: 普通列名模板，例子：c_${type}_${index}
-      partitionColumnName: 分区列名模板，例子：p_${type}_${index}
       file: "描述列类型文件，以换行符\\n分隔\n${ls}例如：`int`, `varchar(%d)`, `@decimal(%d, %d)`；加上@前缀，表示是分区类型"
       fileContent: 描述列类型文件内容，与--file的区别在于，接受的参数是文本内容而非文件名
       types: 列类型，可以传入多个值，与-f互斥，优先取-f的值
       partitionTypes: 分区类型
-      commentAlone: 是否生成额外的comment sql
-      columnCommentSql: "comment sql模板\n${ls}例如：comment on column $table.$column is 'Column Type: $type';\n${ls}或者：Column Type: $type"
-      compact: 紧凑模式，SQL不换行
-      extraColumnSql: 额外的需要创建的列SQL
-      tableSuffixSql: 自定义的建表SQL后缀
-      batchSize: 批量插入的大小限制，即生成的values的最大行数
-      rowNum: 插入的总行数
-      columnQuota: 是否为列名转义
-      doubleQuota: 列名转义符是否为双引号
-      dataSourceType: 想要兼容的数据源，比如 postgresql, mysql, oracle, db2, sqlserver
-      converters: 字面量转换函数，例子：binary:cast($value as $type)
-      converterFile: "指定字面量转换函数的文件，以换行符\\n分隔"
-      setEnumValues: set和enum类型的枚举值，默认为a,b,c,d
+
   batch-type-table:
     commandDesc: 批量生成数据表和数据
     header: "jdbc-op batch-type-table 批量生成数据表和数据\n例子：jdbc-op batch-type-table -t bigint timestamp string"
@@ -83,9 +87,3 @@ subcommands:
       ignoreError: 执行SQL失败之后是否忽略错误继续
       outputFile: 文件名，保存SQL至文件
       outputFileSqlMaxCount: "分文件保存，每个文件的最大SQL数\n${ls}outputFile取a.sql，则生成a1.sql, a2.sql ..."
-      commentAlone: 见jdbc-op type-table --help
-      columnCommentSql: 见jdbc-op type-table --help
-      tableDdlSuffix: 见jdbc-op type-table --help
-      extraColumnDdl: 见jdbc-op type-table --help
-      batchSize: 见jdbc-op type-table --help
-      rowNum: 见jdbc-op type-table --help

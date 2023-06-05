@@ -1,16 +1,14 @@
 package org.dreamcat.daily.script;
 
-import static org.dreamcat.common.util.RandomUtil.randi;
 import static org.dreamcat.common.util.RandomUtil.uuid32;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import java.io.File;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -23,15 +21,11 @@ import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.FileUtil;
-import org.dreamcat.common.json.YamlUtil;
-import org.dreamcat.common.sql.SqlValueRandomGenerator;
 import org.dreamcat.common.text.InterpolationUtil;
-import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.common.util.CollectionUtil;
 import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
-import org.dreamcat.daily.script.util.ConverterInfo;
 import org.dreamcat.daily.script.util.TypeInfo;
 
 /**
@@ -40,9 +34,8 @@ import org.dreamcat.daily.script.util.TypeInfo;
  */
 @Setter
 @Accessors(fluent = true)
-@ArgParserType(allProperties = true,
-        command = "type-table")
-public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
+@ArgParserType(allProperties = true, command = "type-table")
+public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
 
     // one type per line: varchar(%d), decimal(%d, %d)
     @ArgParserField("f")
@@ -53,46 +46,9 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
     private List<String> types;
     @ArgParserField("p")
     private List<String> partitionTypes;
-
     @ArgParserField(required = true, position = 0)
-    private String tableName;
-    @ArgParserField("cn")
-    private String columnName = "c_$type";
-    @ArgParserField("pn")
-    private String partitionColumnName = "p_$type";
+    private String tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
 
-    private boolean compact;
-    private boolean columnQuota;
-    // comment on column, or c int comment
-    // default use mysql column comment style
-    private boolean commentAlone;
-    // such as: comment on column $table.$column is 'Column Type: $type'
-    // or 'Column Type: $type' if commentAlone is ture
-    @ArgParserField("c")
-    private String columnCommentSql;
-    // postgresql, mysql, oracle, db2, sqlserver, and so on
-    private boolean doubleQuota; // "c1" or `c2`
-    private String tableSuffixSql;
-    private String extraColumnSql;
-
-    @ArgParserField("S")
-    private String dataSourceType;
-    private String converterFile;
-    // binary:cast($value as $type)
-    private Set<String> converters;
-
-    @ArgParserField({"b"})
-    private int batchSize = 1;
-    @ArgParserField({"n"})
-    private int rowNum = randi(1, 76);
-    private boolean debug;
-    @ArgParserField(firstChar = true)
-    private boolean help;
-    private String setEnumValues = "a,b,c,d";
-
-    // mappingType -> types
-    transient Map<String, List<String>> mappingTypes;
-    transient Map<String, List<String>> mappingPartitionTypes;
     transient Map<String, MutableInt> columnNameCounter = new HashMap<>();
     transient Map<String, MutableInt> partitionColumnNameCounter = new HashMap<>();
 
@@ -106,7 +62,8 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
 
         if (ObjectUtil.isBlank(file) && ObjectUtil.isEmpty(types) &&
                 ObjectUtil.isEmpty(fileContent)) {
-            System.err.println("required arg: -f|--file <file> or -t|--types <t1> <t2>... or -F|--file-content <content>");
+            System.err.println(
+                    "required arg: -f|--file <file> or -t|--types <t1> <t2>... or -F|--file-content <content>");
             System.exit(1);
         }
         if (ObjectUtil.isNotBlank(file) || ObjectUtil.isNotBlank(fileContent)) {
@@ -117,92 +74,39 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
                 lines = Arrays.asList(fileContent.split("\n"));
             }
             types = lines.stream()
-                    .filter(StringUtil::isNotBlank)
-                    .map(String::trim)
+                    .filter(StringUtil::isNotBlank).map(String::trim)
                     .filter(it -> {
                         if (it.startsWith("@")) {
                             partitionTypes.add(it.substring(1));
                             return false;
                         }
                         return !it.startsWith("#");
-                    })
-                    .map(String::trim).collect(Collectors.toList());
+                    }).map(String::trim).collect(Collectors.toList());
         }
 
         if (ObjectUtil.isEmpty(types)) {
             System.err.println("at least one type is required in file " + file);
             System.exit(1);
         }
-        if (ObjectUtil.isBlank(tableName)) {
-            tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
-        }
 
         this.afterPropertySet();
+        run(this::handle);
+    }
+
+    void handle(Connection connection) throws Exception {
         List<String> sqlList = genSql();
-        for (int i = 0, size = sqlList.size(); i < size; i++) {
-            String sql = sqlList.get(i);
-            if (compact) {
-                if (i > 0) System.out.print(" ");
-                System.out.print(sql);
-            } else {
-                System.out.println(sql);
-            }
-        }
-        if (compact) System.out.println();
-    }
 
-    void afterPropertySet() throws Exception {
-        // builtin converters
-        Map<String, List<ConverterInfo>> converterInfos = YamlUtil.fromJson(
-                ClassPathUtil.getResourceAsString("converters.yaml"),
-                new TypeReference<Map<String, List<ConverterInfo>>>() {
-                });
-        registerConvertors(converterInfos);
-        // customer converters
-        if (StringUtil.isNotEmpty(converterFile)) {
-            converterInfos = YamlUtil.fromJson(new File(converterFile),
-                    new TypeReference<Map<String, List<ConverterInfo>>>() {
-                    });
-            registerConvertors(converterInfos);
-        }
-        for (String converter : converters) {
-            String[] ss = converter.split(",", 2);
-            if (ss.length != 2) {
-                throw new IllegalArgumentException("invalid converter: " + converter);
-            }
-            String type = ss[0], template = ss[1];
-            registerConvertor(type, template);
+        if (!yes) {
+            output(sqlList);
+            return;
         }
 
-        if (Arrays.asList("pg", "postgres", "postgresql").contains(dataSourceType)) {
-            if (StringUtil.isNotBlank(columnCommentSql) && !columnCommentSql.trim().startsWith("comment on column")) {
-                columnCommentSql = String.format("comment on column $table.$column is '%s'", columnCommentSql);
-                commentAlone = true; // since use postgres style
-                doubleQuota = true;
+        try (Statement statement = connection.createStatement()) {
+            output(sqlList);
+            for (String sql : sqlList) {
+                statement.execute(sql);
             }
         }
-    }
-
-    private void registerConvertors(Map<String, List<ConverterInfo>> converterInfoMap) {
-        Map<String, List<ConverterInfo>> map = new HashMap<>();
-        converterInfoMap.forEach((k, v) -> {
-            for (String ds : k.split(",")) {
-                if (StringUtil.isNotEmpty(ds)) map.put(ds, v);
-            }
-        });
-        List<ConverterInfo> converterInfos = map.get(dataSourceType);
-        if (converterInfos == null) return;
-
-        for (ConverterInfo converterInfo : converterInfos) {
-            for (String type : converterInfo.getTypes()) {
-                registerConvertor(type, converterInfo.getTemplate());
-            }
-        }
-    }
-
-    private void registerConvertor(String type, String template) {
-        gen.registerConvertor((literal, typeName) -> InterpolationUtil.format(
-                template, MapUtil.of("value", literal, "type", type)), type);
     }
 
     public List<String> genSql() {
@@ -335,9 +239,4 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
         }
         return String.format(" partition(%s)", String.join(",", list));
     }
-
-    private final SqlValueRandomGenerator gen = new SqlValueRandomGenerator()
-            .maxBitLength(1)
-            .addEnumAlias("enum8") // clickhouse
-            .addEnumAlias("enum16");
 }

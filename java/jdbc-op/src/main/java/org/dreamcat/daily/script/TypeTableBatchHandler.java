@@ -1,13 +1,128 @@
 package org.dreamcat.daily.script;
 
+import java.sql.Connection;
+import java.sql.Statement;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.SneakyThrows;
+import org.dreamcat.common.Pair;
+import org.dreamcat.common.argparse.ArgParserContext;
+import org.dreamcat.common.argparse.ArgParserEntrypoint;
+import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.common.io.FileUtil;
+import org.dreamcat.common.text.InterpolationUtil;
+import org.dreamcat.common.util.ArrayUtil;
+import org.dreamcat.common.util.CollectionUtil;
+import org.dreamcat.common.util.ObjectUtil;
+import org.dreamcat.common.util.StringUtil;
 
 /**
  * @author Jerry Will
  * @version 2023-06-06
  */
 @ArgParserType(allProperties = true, command = "type-table-batch")
-public class TypeTableBatchHandler extends TypeTableHandler {
+public class TypeTableBatchHandler extends BaseTypeTableHandler
+        implements ArgParserEntrypoint<TypeTableBatchHandler> {
+
+    @ArgParserField("f")
+    private String file;
+    @ArgParserField("F")
+    private String fileContent;
+    @ArgParserField(required = true, position = 0)
+    private String tableName = "t_table_$i";
+    boolean ignoreError; // ignore error when any TypeTableHandler failed
+
+    transient TypeTableHandler typeTableHandler;
+
+    @Override
+    @SneakyThrows
+    public void run(ArgParserContext<TypeTableBatchHandler> context) {
+        if (help) {
+            System.out.println(context.getHelp());
+            return;
+        }
+        if (StringUtil.isBlank(file) && StringUtil.isBlank(fileContent)) {
+            System.err.println("required arg: -f|--file <file> or -F|--file-content <content>");
+            System.exit(1);
+        }
+
+        List<String> lines;
+        if (ObjectUtil.isNotBlank(file)) {
+            lines = FileUtil.readAsList(file);
+        } else {
+            lines = Arrays.asList(fileContent.split("\n"));
+        }
+        List<List<String>> typesList = lines.stream()
+                .filter(StringUtil::isNotBlank)
+                .map(String::trim)
+                .filter(it -> !it.startsWith("#"))
+                .map(line -> ArrayUtil.mapToList(line.split(";"), String::trim))
+                .collect(Collectors.toList());
 
 
+        run(connection -> this.handle(connection, typesList));
+    }
+
+    @Override
+    void afterPropertySet() throws Exception {
+        TypeTableHandler typeTableHandler = (TypeTableHandler) new TypeTableHandler()
+                .columnName(columnName)
+                .partitionColumnName(partitionColumnName)
+                .compact(compact)
+                .columnQuota(columnQuota)
+                .doubleQuota(doubleQuota)
+                .commentAlone(commentAlone)
+                .columnCommentSql(columnCommentSql)
+                .tableSuffixSql(tableSuffixSql)
+                .extraColumnSql(extraColumnSql)
+                .dataSourceType(dataSourceType)
+                .converterFile(converterFile)
+                .converters(converters)
+                .batchSize(batchSize)
+                .rowNum(rowNum)
+                .setEnumValues(setEnumValues);
+        typeTableHandler.afterPropertySet();
+    }
+
+    void handle(Connection connection, List<List<String>> typesList) {
+        int size = typesList.size();
+        for (int i = 1; i <= size; i++) {
+            List<String> types = typesList.get(i - 1);
+            try {
+                Pair<List<String>, List<String>> pair = CollectionUtil.partitioningBy(
+                        types, type -> !type.startsWith("@"));
+                handleOne(connection, pair.first(), pair.second(), i);
+            } catch (Exception e) {
+                if (!ignoreError) {
+                    System.err.printf("error handle %s: %s%n", types, e.getMessage());
+                    e.printStackTrace();
+                    break;
+                }
+            }
+        }
+    }
+
+    private void handleOne(Connection connection, List<String> types, List<String> partitionTypes, int index) throws Exception {
+        String name = InterpolationUtil.formatEl(tableName, "i", index, "index", index);
+        typeTableHandler.tableName(name)
+                .types(types)
+                .partitionTypes(partitionTypes)
+                .columnNameCounter(new HashMap<>())
+                .partitionColumnNameCounter(new HashMap<>());
+        List<String> sqlList = typeTableHandler.genSql();
+        if (!yes) {
+            output(sqlList);
+            return;
+        }
+
+        try (Statement statement = connection.createStatement()) {
+            output(sqlList);
+            for (String sql : sqlList) {
+                statement.execute(sql);
+            }
+        }
+    }
 }

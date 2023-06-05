@@ -25,10 +25,10 @@ public class BaseJdbcHandler {
     String user;
     @ArgParserField(value = {"w"})
     String password;
-    @ArgParserField(value = {"C","dc"})
-    String driverClassName;
+    @ArgParserField(value = {"dc"})
+    String driverClass;
     // driver directory
-    @ArgParserField(value = {"P","dp"})
+    @ArgParserField(value = {"dp"})
     String driverPath;
     @ArgParserField({"D"})
     Properties props;
@@ -43,8 +43,8 @@ public class BaseJdbcHandler {
         }
         // validate args
         CliUtil.checkParameter(jdbcUrl, "jdbcUrl", "-j|--jdbc-url");
-        CliUtil.checkParameter(driverPath, "driverPath", "-p|--driver-path");
-        CliUtil.checkParameter(driverClassName, "driverClassName", "-c|--driver-class-name");
+        CliUtil.checkParameter(driverPath, "driverPath", "--dp|--driver-path");
+        CliUtil.checkParameter(driverClass, "driverClass", "--dc|--driver-class");
         if (isNotEmpty(user) && isNotEmpty(password)) {
             props.put("user", user);
             props.put("password", password);
@@ -53,7 +53,7 @@ public class BaseJdbcHandler {
         URL driverPathUrl = new File(driverPath).toURI().toURL();
         FileClassLoader driverClassLoader = new FileClassLoader(new URL[]{driverPathUrl},
                 Thread.currentThread().getContextClassLoader());
-        Class<? extends Driver> driverClass = (Class) driverClassLoader.loadClass(driverClassName);
+        Class<? extends Driver> driverClass = (Class) driverClassLoader.loadClass(this.driverClass);
 
         Driver driver = ReflectUtil.newInstance(driverClass);
         try (Connection connection = driver.connect(jdbcUrl, props)) {
