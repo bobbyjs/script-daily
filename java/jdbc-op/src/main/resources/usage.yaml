@@ -40,6 +40,8 @@ subcommands:
       help: Print help information
       debug: Print debug information
       tableName: "Table name，example: my_table, my_db.my_table"
+      columnName: "Common column name template，example: c_${type}_${index}"
+      partitionColumnName: "Partition column name template，example: p_${type}_${index}"
       file: "Describe the column type file, separated by newline \\n\n${ls}. For example: `int`, `varchar(%d)`, `@decimal(%d, %d)`; You can add the @ prefix to define the partition type"
       fileContent: Describe the content of the column type file. The difference from --file is that the accepted parameter is the text content instead of the file name
       types: Column types, multiple values can be passed in, mutually exclusive with -f, the value of -f is preferred

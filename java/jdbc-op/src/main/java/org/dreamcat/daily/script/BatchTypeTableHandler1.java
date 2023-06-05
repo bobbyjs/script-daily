@@ -30,8 +30,8 @@ import org.dreamcat.common.util.StringUtil;
  */
 @ArgParserType(firstChar = true, allProperties = true,
         command = "batch-type-table")
-public class BatchTypeTableHandler extends BaseJdbcHandler
-        implements ArgParserEntrypoint<BatchTypeTableHandler> {
+public class BatchTypeTableHandler1 extends BaseJdbcHandler
+        implements ArgParserEntrypoint<BatchTypeTableHandler1> {
 
     String file;
     Set<String> types; // combination
@@ -80,7 +80,7 @@ public class BatchTypeTableHandler extends BaseJdbcHandler
 
     @Override
     @SneakyThrows
-    public void run(ArgParserContext<BatchTypeTableHandler> context) {
+    public void run(ArgParserContext<BatchTypeTableHandler1> context) {
         if (help) {
             System.out.println(context.getHelp());
             return;

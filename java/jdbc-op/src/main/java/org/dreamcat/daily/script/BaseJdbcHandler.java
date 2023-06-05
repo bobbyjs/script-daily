@@ -19,15 +19,20 @@ import org.dreamcat.daily.script.common.CliUtil;
  */
 public class BaseJdbcHandler {
 
+    @ArgParserField(value = {"j"})
     String jdbcUrl;
+    @ArgParserField(value = {"u"})
     String user;
+    @ArgParserField(value = {"w"})
     String password;
-    @ArgParserField(value = {"C"})
+    @ArgParserField(value = {"C","dc"})
     String driverClassName;
-    @ArgParserField(value = {"P"})
+    // driver directory
+    @ArgParserField(value = {"P","dp"})
     String driverPath;
     @ArgParserField({"D"})
     Properties props;
+    @ArgParserField(value = {"y"})
     boolean yes; // execute sql or not actually
 
     @SuppressWarnings({"rawtypes", "unchecked"})

@@ -44,9 +44,7 @@ import org.dreamcat.daily.script.util.TypeInfo;
         command = "type-table")
 public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
 
-    // one type per line
-    // varchar(%d)
-    // decimal(%d, %d)
+    // one type per line: varchar(%d), decimal(%d, %d)
     @ArgParserField("f")
     private String file;
     @ArgParserField("F")
@@ -58,10 +56,10 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
 
     @ArgParserField(required = true, position = 0)
     private String tableName;
-    @ArgParserField("C")
-    private String columnNameTemplate = "c_$type";
-    @ArgParserField("P")
-    private String partitionColumnNameTemplate = "p_$type";
+    @ArgParserField("cn")
+    private String columnName = "c_$type";
+    @ArgParserField("pn")
+    private String partitionColumnName = "p_$type";
 
     private boolean compact;
     private boolean columnQuota;
@@ -264,7 +262,7 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
 
         int index = columnNameCounter.computeIfAbsent(
                 typeInfo.getColumnName(), k -> new MutableInt(0)).incrAndGet();
-        String col = InterpolationUtil.format(columnNameTemplate,
+        String col = InterpolationUtil.format(columnName,
                 "t", typeInfo.getColumnName(), "type", typeInfo.getColumnName(),
                 "i", index + "", "index", index + "");
         columnNames.add(col);
@@ -315,7 +313,7 @@ public class TypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
             TypeInfo typeInfo = new TypeInfo(partitionType, setEnumValues);
             int index = partitionColumnNameCounter.computeIfAbsent(
                     typeInfo.getColumnName(), k -> new MutableInt(0)).incrAndGet();
-            String columnName = InterpolationUtil.format(partitionColumnNameTemplate,
+            String columnName = InterpolationUtil.format(partitionColumnName,
                     "t", typeInfo.getColumnName(), "type", typeInfo.getColumnName(),
                     "i", index + "", "index", index + "");
             partitionColumnNames.add(columnName);
