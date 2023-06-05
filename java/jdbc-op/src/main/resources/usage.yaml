@@ -69,7 +69,7 @@ subcommands:
       fileContent: Describe the content of the column type file. The difference from --file is that the accepted parameter is the text content instead of the file name
       types: Column types, multiple values can be passed in, mutually exclusive with -f, the value of -f is preferred
       partitionTypes: Partition type
-  batch-type-table:
+  type-table-batch:
     commandDesc: Generate data tables and data in batches
     header: "jdbc-op batch-type-table Generate data tables and data in batches\nExample: jdbc-op batch-type-table -t bigint timestamp string"
     helpParam:

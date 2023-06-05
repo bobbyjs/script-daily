@@ -62,13 +62,13 @@ public class TypeTableBatchHandler extends BaseTypeTableHandler
                 .map(line -> ArrayUtil.mapToList(line.split(";"), String::trim))
                 .collect(Collectors.toList());
 
-
+        this.afterPropertySet();
         run(connection -> this.handle(connection, typesList));
     }
 
     @Override
     void afterPropertySet() throws Exception {
-        TypeTableHandler typeTableHandler = (TypeTableHandler) new TypeTableHandler()
+        this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
                 .columnName(columnName)
                 .partitionColumnName(partitionColumnName)
                 .compact(compact)
