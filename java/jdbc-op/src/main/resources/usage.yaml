@@ -12,7 +12,7 @@ inheritHelpDesc:
   jdbcUrl: "JDBC connection parameters: JDBC URL"
   user: "JDBC connection parameters: user"
   password: "JDBC connection parameters: password"
-  properties: Additional jdbc parameters
+  props: Additional jdbc parameters
   driverPath: The directory where the JDBC driver jar package is located
   driverClass: JDBC driver fully qualified class name
   yes: Whether to actually open a JDBC connection and execute SQLs
@@ -31,6 +31,8 @@ inheritHelpDesc:
   converters: "Literal conversion functions, example: binary:cast($value as $type)"
   converterFile: "Specify the file of literal conversion functions, separated by newline character \\n"
   setEnumValues: The enumeration value of set and enum type, the default is `a, b, c, d`
+  rollingFile: "Generated rolling SQL filename, example: output_${i+100}.sql"
+  rollingFileMaxSqlCount: Specifies the maximum number of SQL entries for each rolling small file
 
 subcommands:
   insert-random:
@@ -65,7 +67,7 @@ subcommands:
       rowNum: <n>
     helpDesc:
       tableName: "Table name，example: my_table, my_db.my_table"
-      file: "Describe the column type file, separated by newline \\n\n${ls}. For example: `int`, `varchar(%d)`, `@decimal(%d, %d)`; You can add the @ prefix to define the partition type"
+      file: "Describe the column type file, separated by newline \\n.\n${ls}For example: `int`, `varchar(%d)`, `@decimal(%d, %d)`; You can add the @ prefix to define the partition type"
       fileContent: Describe the content of the column type file. The difference from --file is that the accepted parameter is the text content instead of the file name
       types: Column types, multiple values can be passed in, mutually exclusive with -f, the value of -f is preferred
       partitionTypes: Partition type

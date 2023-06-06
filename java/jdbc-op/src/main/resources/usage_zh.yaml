@@ -15,7 +15,7 @@ inheritHelpDesc:
   jdbcUrl: JDBC连接参数：JDBC URL 地址
   user: JDBC连接参数：用户名
   password: JDBC连接参数：密码
-  properties: 额外的jdbc参数
+  props: 额外的jdbc参数
   driverPath: JDBC驱动jar包所在目录
   driverClass: JDBC驱动全限定类名
   yes: 是否实际打开JDBC连接并执行SQL
@@ -34,6 +34,8 @@ inheritHelpDesc:
   converters: 字面量转换函数，例子：binary:cast($value as $type)
   converterFile: "指定字面量转换函数的文件，以换行符\\n分隔"
   setEnumValues: set和enum类型的枚举值，默认为a,b,c,d
+  rollingFile: 生成的滚动SQL文件，例子：output_${i+100}.sql
+  rollingFileMaxSqlCount: 指定每个滚动小文件的最大SQL条数
 
 subcommands:
   insert-random:

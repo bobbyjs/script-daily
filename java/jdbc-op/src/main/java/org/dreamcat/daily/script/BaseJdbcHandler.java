@@ -3,18 +3,10 @@ package org.dreamcat.daily.script;
 import static org.dreamcat.common.util.StringUtil.isNotEmpty;
 
 import java.io.File;
-import java.net.URI;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.Driver;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.function.IConsumer;
 import org.dreamcat.common.io.UrlUtil;
