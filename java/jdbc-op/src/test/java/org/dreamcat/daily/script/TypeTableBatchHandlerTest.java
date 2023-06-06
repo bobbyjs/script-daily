@@ -1,8 +1,6 @@
 package org.dreamcat.daily.script;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.List;
 import org.dreamcat.common.argparse.SubcommandArgParser;
 import org.junit.jupiter.api.Test;
 
@@ -14,22 +12,30 @@ public class TypeTableBatchHandlerTest {
 
     @Test
     void testFile() throws Exception {
-        List<String> args = Arrays.asList(
+        new SubcommandArgParser(App.class).run(
                 "type-table-batch", "t_table_$i","-f",
                 new File("src/test/resources/batch.txt").getCanonicalPath());
-        SubcommandArgParser argParser = new SubcommandArgParser(App.class);
-        argParser.run(args);
     }
 
     @Test
     void testTypes() {
-        List<String> args = Arrays.asList(
-                "type-table-batch",
-                "-j", "jdbc:xxx:xxx", "-u", "myuser", "-p", "secret",
+        // 7个类型中分别取3-7
+        //             2           1   0
+        // 99 = 2**7 - 7 * 6 / 2 - 7 - 1
+        new SubcommandArgParser(App.class).run(
+                "type-table-batch", "t_table_${i+100}",
                 "-t", "boolean", "int", "bigint", "double", "timestamp", "date", "string",
-                "-o", "100", "-n", "0", "-r", "3"
-        );
-        SubcommandArgParser argParser = new SubcommandArgParser(App.class);
-        argParser.run(args);
+                "-n", "0", "-r", "3");
+    }
+
+    @Test
+    void testRollingFile() {
+        // 127 / 20 = 7
+        new SubcommandArgParser(App.class).run(
+                "type-table-batch", "t_table_${i+100}",
+                "-t", "boolean", "int", "bigint", "double", "timestamp", "date", "string",
+                "--compact", "-m", "1-7","-n", "0",
+                "-R", System.getenv("HOME") + "/Downloads/output_${i+100}.sql",
+                "-M", "20");
     }
 }

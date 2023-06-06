@@ -55,12 +55,10 @@ class TypedTableHandlerTest {
 
     @Test
     void testClickhouse() throws Exception {
-
         List<String> args = new ArrayList<>();
         args.addAll(Arrays.asList("type-table", "my_table",
-                "--table-ddl-suffix", "engine = MergeTree order by c_uuid",
-                "--column-quotation",
-                "-t"));
+                "--table-suffix-sql", "engine = MergeTree order by c_uuid",
+                "--column-quota", "-t"));
         args.addAll(Arrays.asList(ClassPathUtil.getResourceAsString(
                 "clickhouse-types.txt").split("\n")));
 

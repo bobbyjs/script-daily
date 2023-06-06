@@ -64,12 +64,13 @@ public class BaseTypeTableHandler extends BaseJdbcHandler {
     @ArgParserField(firstChar = true)
     boolean help;
     String setEnumValues = "a,b,c,d";
-
+    @ArgParserField({"R"})
     String rollingFile; // such as: output_${i+100}.sql
+    @ArgParserField({"M"})
     int rollingFileMaxSqlCount = Integer.MAX_VALUE;
 
     transient int sqlCountCounter;
-    transient int rollingFileIndex;
+    transient int rollingFileIndex = 1;
 
     void afterPropertySet() throws Exception {
         // builtin converters
@@ -145,7 +146,7 @@ public class BaseTypeTableHandler extends BaseJdbcHandler {
         while (expect < size) {
             List<String> subSqlList = sqlList.subList(offset, expect);
             String blockFile = InterpolationUtil.formatEl(rollingFile, "i", rollingFileIndex);
-            FileUtil.writeFrom(blockFile, String.join("\n", subSqlList), true);
+            FileUtil.writeFrom(blockFile, String.join("\n", subSqlList) + "\n", true);
             offset += expect;
             size -= expect;
             expect = rollingFileMaxSqlCount;
@@ -153,10 +154,10 @@ public class BaseTypeTableHandler extends BaseJdbcHandler {
             rollingFileIndex++;
         }
         if (size > 0) {
-            sqlCountCounter = size;
+            sqlCountCounter += size;
             List<String> subSqlList = sqlList.subList(offset, sqlList.size());
             String blockFile = InterpolationUtil.formatEl(rollingFile, "i", rollingFileIndex);
-            FileUtil.writeFrom(blockFile, String.join("\n", subSqlList), true);
+            FileUtil.writeFrom(blockFile, String.join("\n", subSqlList) + "\n", true);
         }
     }
 

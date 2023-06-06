@@ -2,10 +2,15 @@ package org.dreamcat.daily.script;
 
 import java.sql.Connection;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.SneakyThrows;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserContext;
@@ -13,9 +18,11 @@ import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.FileUtil;
+import org.dreamcat.common.math.CombinationUtil;
 import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.ArrayUtil;
 import org.dreamcat.common.util.CollectionUtil;
+import org.dreamcat.common.util.NumberUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
 
@@ -31,6 +38,13 @@ public class TypeTableBatchHandler extends BaseTypeTableHandler
     private String file;
     @ArgParserField("F")
     private String fileContent;
+    @ArgParserField("t")
+    List<String> combinationTypes;
+    @ArgParserField({"m"})
+    Set<String> combinationMode = Collections.singleton("3-16");
+    @ArgParserField({"r"})
+    int combinationRepeat = 1;
+
     @ArgParserField(required = true, position = 0)
     private String tableName = "t_table_$i";
     boolean ignoreError; // ignore error when any TypeTableHandler failed
@@ -44,23 +58,60 @@ public class TypeTableBatchHandler extends BaseTypeTableHandler
             System.out.println(context.getHelp());
             return;
         }
-        if (StringUtil.isBlank(file) && StringUtil.isBlank(fileContent)) {
-            System.err.println("required arg: -f|--file <file> or -F|--file-content <content>");
+        if (ObjectUtil.isEmpty(file) && ObjectUtil.isBlank(fileContent) &&
+                ObjectUtil.isEmpty(combinationTypes)) {
+            System.err.println("required arg: -f|--file <file> or -F|--file-content <content> or -t|--types <t1> <t2>...");
             System.exit(1);
         }
 
-        List<String> lines;
-        if (ObjectUtil.isNotBlank(file)) {
-            lines = FileUtil.readAsList(file);
+        List<List<String>> typesList;
+        if (ObjectUtil.isNotEmpty(file) || ObjectUtil.isNotBlank(fileContent)) {
+            List<String> lines;
+            if (ObjectUtil.isNotEmpty(file)) {
+                lines = FileUtil.readAsList(file);
+            } else {
+                lines = Arrays.asList(fileContent.split("\n"));
+            }
+            typesList = lines.stream()
+                    .filter(StringUtil::isNotBlank)
+                    .map(String::trim)
+                    .filter(it -> !it.startsWith("#"))
+                    .map(line -> ArrayUtil.mapToList(line.split(";"), String::trim))
+                    .collect(Collectors.toList());
         } else {
-            lines = Arrays.asList(fileContent.split("\n"));
+            int typeCount = combinationTypes.size();
+            if (typeCount > 30) {
+                System.err.println("types is too much, must <= 30, but: " + typeCount);
+                System.exit(1);
+            }
+            Set<Integer> combinationNums = new HashSet<>();
+            for (String c : combinationMode) {
+                String[] ss = c.split("-");
+                if (ss.length > 1) {
+                    IntStream.rangeClosed(Integer.parseInt(ss[0]), Integer.parseInt(ss[1]))
+                            .forEach(combinationNums::add);
+                } else {
+                    combinationNums.add(Integer.parseInt(c));
+                }
+            }
+
+            typesList = new ArrayList<>();
+            for (int combinationNum : combinationNums) {
+                if (combinationNum > typeCount) continue;
+                List<int[]> all = CombinationUtil.all(combinationNum, typeCount);
+                for (int[] indexes : all) {
+                    List<String> types = new ArrayList<>(combinationNum);
+                    for (int i : indexes) {
+                        types.add(combinationTypes.get(i));
+                    }
+                    // repeat it
+                    int repeat = NumberUtil.limitRange(combinationRepeat, 1, 100);
+                    for (int i = 0; i < repeat; i++) {
+                        typesList.add(types);
+                    }
+                }
+            }
         }
-        List<List<String>> typesList = lines.stream()
-                .filter(StringUtil::isNotBlank)
-                .map(String::trim)
-                .filter(it -> !it.startsWith("#"))
-                .map(line -> ArrayUtil.mapToList(line.split(";"), String::trim))
-                .collect(Collectors.toList());
 
         this.afterPropertySet();
         run(connection -> this.handle(connection, typesList));
