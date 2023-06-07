@@ -43,14 +43,12 @@ subcommands:
     header: "jdbc-op insert-random 向指定表插入随机数据\n例子：jdbc-op insert-random test_table --jdbc-url jdbc:mysql://127.0.0.1:3306/test_db \
            -uroot -proot -d /path/to/mysql-jdbc-driver.jar -n10 -i id ctime mtime"
     helpParam:
-      batchSize: n
-      rowNum: n
+      batchSize: <n>
+      rowNum: <n>
     helpDesc:
-      help: 打印此帮助
       tableName: 数据表名，例如：my_table, my_db.my_table
       ignoredColumns: 忽略的列，可以传入多个值
-      batchSize: 批量插入的大小限制，即生成的values的最大行数
-      rowNum: 插入的总行数
+      partitionColumns: 指定分区列
 
   type-table:
     commandDesc: 通过指定的类型生成相应的表和数据
@@ -68,7 +66,7 @@ subcommands:
       types: 列类型，可以传入多个值，与-f互斥，优先取-f的值
       partitionTypes: 分区类型
 
-  type-table-batch:
+  batch-type-table:
     commandDesc: 批量生成数据表和数据
     header: "jdbc-op batch-type-table 批量生成数据表和数据\n例子：jdbc-op batch-type-table -t bigint timestamp string"
     helpParam:

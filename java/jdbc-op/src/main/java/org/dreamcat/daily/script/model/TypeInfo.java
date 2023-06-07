@@ -1,4 +1,4 @@
-package org.dreamcat.daily.script.util;
+package org.dreamcat.daily.script.model;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.dreamcat.common.Triple;
 
 /**
  * @author Jerry Will

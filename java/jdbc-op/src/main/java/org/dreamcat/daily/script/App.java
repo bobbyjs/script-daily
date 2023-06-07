@@ -20,7 +20,7 @@ import org.dreamcat.common.util.SystemUtil;
         subcommands = {
                 InsertRandomHandler.class,
                 TypeTableHandler.class,
-                TypeTableBatchHandler.class,
+                BatchTypeTableHandler.class,
                 HbaseTypeTableHandler.class,
         }
 )

@@ -1,58 +1,51 @@
 package org.dreamcat.daily.script;
 
-import static org.dreamcat.common.util.RandomUtil.choose36;
-import static org.dreamcat.common.util.RandomUtil.rand;
 import static org.dreamcat.common.util.RandomUtil.randi;
-import static org.dreamcat.daily.script.util.Util.fromJdbcType;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import lombok.SneakyThrows;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserContext;
 import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
-import org.dreamcat.common.reflect.ObjectRandomGenerator;
-import org.dreamcat.common.reflect.ObjectType;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.sql.JdbcUtil;
-import org.dreamcat.common.util.DateUtil;
-import org.dreamcat.common.util.FunctionUtil;
-import org.dreamcat.common.util.NumberUtil;
-import org.dreamcat.common.util.StringUtil;
+import org.dreamcat.common.util.CollectionUtil;
 
 /**
  * @author Jerry Will
  * @version 2023-03-22
  */
-@ArgParserType(firstChar = true, allProperties = true,
-        command = "insert-random")
-public class InsertRandomHandler extends BaseJdbcHandler
-    implements ArgParserEntrypoint<InsertRandomHandler> {
+@ArgParserType(allProperties = true, command = "insert-random")
+public class InsertRandomHandler extends BaseOutputHandler
+        implements ArgParserEntrypoint<InsertRandomHandler> {
 
     @ArgParserField(required = true, position = 0)
     private String tableName;
-    @ArgParserField
-    private String formattedNameTemplate; // such as `%s` or "%s"
+    @ArgParserField("i")
     private Set<String> ignoredColumns;
-    private int batchSize = 100;
+    @ArgParserField("P")
+    private Set<String> partitionColumns;
+
+    boolean columnQuota;
+    boolean doubleQuota; // "c1" or `c2`
+    @ArgParserField("S")
+    String dataSourceType;
+    String converterFile;
+    Set<String> converters; // binary:cast($value as $type)
+    String setEnumValues = "a,b,c,d";
+
+    @ArgParserField({"b"})
+    int batchSize = 1;
     @ArgParserField({"n"})
-    private int rowNum = randi(1, 314);
-    @ArgParserField(firstChar = true)
-    private boolean help;
+    int rowNum = randi(1, 76);
+
+    transient TypeTableHandler typeTableHandler;
 
     @SneakyThrows
     @Override
@@ -66,10 +59,32 @@ public class InsertRandomHandler extends BaseJdbcHandler
             System.exit(1);
         }
 
+        this.afterPropertySet();
         run(this::handle);
     }
 
-    private void handle(Connection connection) throws SQLException {
+    void afterPropertySet() throws Exception {
+        this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
+                .tableName(tableName)
+                .columnName("$type")
+                .partitionColumnName("$type")
+                .columnQuota(columnQuota)
+                .doubleQuota(doubleQuota)
+                .dataSourceType(dataSourceType)
+                .converterFile(converterFile)
+                .converters(converters)
+                .batchSize(batchSize)
+                .rowNum(rowNum)
+                .setEnumValues(setEnumValues)
+                .compact(compact)
+                .rollingFile(rollingFile)
+                .rollingFileMaxSqlCount(rollingFileMaxSqlCount)
+                .yes(yes)
+                .debug(debug);
+        typeTableHandler.afterPropertySet();
+    }
+
+    void handle(Connection connection) throws Exception {
         String s = null, t = tableName;
         if (tableName.contains(".")) {
             String[] ss = tableName.split("\\.", 2);
@@ -77,91 +92,37 @@ public class InsertRandomHandler extends BaseJdbcHandler
             t = ss[1];
         }
         List<JdbcColumnDef> columns = JdbcUtil.getTableSchema(connection, s, t);
-        List<Pair<String, ObjectType>> needInsertColumns = columns.stream()
-                .filter(it -> !this.ignoredColumns.contains(it.getName()))
-                .map(it -> Pair.of(it.getName(), FunctionUtil.ifNull(fromJdbcType(it.getType()), ObjectType.fromType(Void.class))))
+        columns = columns.stream().filter(column -> !ignoredColumns.contains(column.getName()))
                 .collect(Collectors.toList());
 
-        String columnStr = needInsertColumns.stream()
-                .map(Pair::first).map(this::formatName)
-                .collect(Collectors.joining(", "));
-        List<ObjectType> needInsertColumnTypes = needInsertColumns.stream().map(Pair::second)
-                .collect(Collectors.toList());
+        Pair<List<JdbcColumnDef>, List<JdbcColumnDef>> pair = CollectionUtil.partitioningBy(
+                columns, column -> !partitionColumns.contains(column.getName()));
 
-        String sql = String.format("insert into %s (%s) values ", formatName(tableName), columnStr);
+        List<String> types = CollectionUtil.mapToList(pair.first(), column -> {
+            String columnName = column.getName();
+            String type = column.getType();
+            return type + ":" + columnName;
+        });
+        List<String> partitionTypes = CollectionUtil.mapToList(pair.second(), column -> {
+            String columnName = column.getName();
+            String type = column.getType();
+            return type + ":" + columnName;
+        });
+
+        typeTableHandler
+                .types(types)
+                .partitionTypes(partitionTypes);
+
+        List<String> sqlList = typeTableHandler.genSql().second();
+        if (!yes) {
+            output(sqlList);
+            return;
+        }
         try (Statement statement = connection.createStatement()) {
-            while (rowNum > batchSize) {
-                rowNum -= batchSize;
-                executeSql(statement, sql + randomValues(needInsertColumnTypes, batchSize));
-            }
-            if (rowNum > 0) {
-                executeSql(statement, sql + randomValues(needInsertColumnTypes, rowNum));
+            output(sqlList);
+            for (String sql : sqlList) {
+                statement.execute(sql);
             }
         }
-    }
-
-    private String randomValues(List<ObjectType> needInsertColumnTypes, int n) {
-        String valuesStr = IntStream.range(0, n)
-                .mapToObj(i -> needInsertColumnTypes.stream()
-                        .map(gen::generate)
-                        .map(this::convertValue)
-                        .collect(Collectors.joining(", ")))
-                .collect(Collectors.joining("), ("));
-        return String.format("(%s)", valuesStr);
-    }
-
-    private String convertValue(Object value) {
-        if (value instanceof Number) {
-            Number n = (Number) value;
-            if (NumberUtil.isFloatLike(n)) {
-                return String.format("%.2f", n.doubleValue());
-            } else {
-                return n.toString();
-            }
-        }
-        String s;
-        if (value instanceof String) {
-            s = StringUtil.escape((String) value, '\'');
-        } else if (value instanceof LocalDate) {
-            s = DateUtil.formatDate((LocalDate) value);
-        } else if (value instanceof LocalTime) {
-            s = DateUtil.formatTime((LocalTime) value);
-        } else if (value instanceof LocalDateTime) {
-            s = DateUtil.format((LocalDateTime) value);
-        } else if (value instanceof byte[]) {
-            s = new String((byte[]) value);
-        } else if (value instanceof Date) {
-            s = DateUtil.format((Date) value);
-        } else if (value instanceof Boolean) {
-            return value.toString();
-        } else {
-            s = Objects.toString(value);
-        }
-        return String.format("'%s'", s);
-    }
-
-    private void executeSql(Statement statement, String sql) throws SQLException {
-        System.out.println(sql);
-        if (!this.yes) return;
-        statement.execute(sql);
-    }
-
-    private String formatName(String name) {
-        if (formattedNameTemplate != null) {
-            name = String.format(formattedNameTemplate, name);
-        }
-        return name;
-    }
-
-    /// randomInstance
-
-    private static final ObjectRandomGenerator gen = new ObjectRandomGenerator();
-    static {
-        gen.register(() -> randi(0, 127), byte.class, Byte.class, short.class, Short.class,
-                int.class, Integer.class, long.class, Long.class, BigInteger.class);
-        gen.register(() -> rand(0, 256), float.class, Float.class, double.class, Double.class,
-                BigDecimal.class);
-        gen.register(gen.getDefaultFn(Date.class), java.sql.Date.class);
-        gen.register(() -> choose36(randi(1, 8)), byte[].class);
     }
 }

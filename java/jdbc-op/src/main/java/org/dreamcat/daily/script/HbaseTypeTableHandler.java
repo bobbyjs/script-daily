@@ -10,7 +10,7 @@ import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.sql.SqlValueRandomGenerator;
-import org.dreamcat.daily.script.util.TypeInfo;
+import org.dreamcat.daily.script.model.TypeInfo;
 
 /**
  * @author Jerry Will

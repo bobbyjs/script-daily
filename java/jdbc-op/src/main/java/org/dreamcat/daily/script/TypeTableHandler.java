@@ -16,6 +16,7 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import org.dreamcat.common.MutableInt;
+import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserContext;
 import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
@@ -26,7 +27,7 @@ import org.dreamcat.common.util.CollectionUtil;
 import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
-import org.dreamcat.daily.script.util.TypeInfo;
+import org.dreamcat.daily.script.model.TypeInfo;
 
 /**
  * @author Jerry Will
@@ -44,7 +45,7 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
     private String fileContent;
     @ArgParserField("t")
     private List<String> types;
-    @ArgParserField("p")
+    @ArgParserField("P")
     private List<String> partitionTypes;
     @ArgParserField(required = true, position = 0)
     private String tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
@@ -94,7 +95,7 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
     }
 
     void handle(Connection connection) throws Exception {
-        List<String> sqlList = genSql();
+        List<String> sqlList = genSqlList();
 
         if (!yes) {
             output(sqlList);
@@ -109,7 +110,13 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
         }
     }
 
-    public List<String> genSql() {
+    public List<String> genSqlList() {
+        Pair<List<String>, List<String>> pair = genSql();
+        return CollectionUtil.concatToList(pair.first(), pair.second());
+    }
+
+    // generate ddl & dml
+    public Pair<List<String>, List<String>> genSql() {
         // debug
         if (debug) {
             Stream.concat(types.stream(), partitionTypes.stream()).distinct().forEach(type -> {
@@ -120,7 +127,7 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
         }
 
         // generate
-        List<String> sqlList = new ArrayList<>();
+        List<String> ddlList = new ArrayList<>();
         StringBuilder createTableSql = new StringBuilder();
         String sep = compact ? " " : "\n";
 
@@ -140,25 +147,26 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
             createTableSql.append(" ").append(tableSuffixSql);
         }
         createTableSql.append(";");
-        sqlList.add(createTableSql.toString());
+        ddlList.add(createTableSql.toString());
 
         for (String s : columnCommentSqlList) {
             if (!s.endsWith(";")) s += ";";
-            sqlList.add(s);
+            ddlList.add(s);
         }
 
+        List<String> insertList = new ArrayList<>();
         String columnNameSql = StringUtil.join(",", columnNames, this::formatColumnName);
         String insertIntoSql = String.format(
                 "insert into %s%s%%s values %%s;", tableName,
                 CollectionUtil.isEmpty(partitionTypes) ? "(" + columnNameSql + ")" : "");
         while (rowNum > batchSize) {
             rowNum -= batchSize;
-            sqlList.add(String.format(insertIntoSql, getPartitionValueSql(partitionColumnNames), getValues(batchSize)));
+            insertList.add(String.format(insertIntoSql, getPartitionValueSql(partitionColumnNames), getValues(batchSize)));
         }
         if (rowNum > 0) {
-            sqlList.add(String.format(insertIntoSql, getPartitionValueSql(partitionColumnNames), getValues(rowNum)));
+            insertList.add(String.format(insertIntoSql, getPartitionValueSql(partitionColumnNames), getValues(rowNum)));
         }
-        return sqlList;
+        return Pair.of(ddlList, insertList);
     }
 
     private String fillColSql(String type, List<String> columnNames, List<String> columnCommentSqlList) {
@@ -191,11 +199,6 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
             }
         }
         return columnDefSql;
-    }
-
-    private String formatColumnName(String columnName) {
-        if (!columnQuota) return columnName;
-        return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
     }
 
     private String getValues(int n) {

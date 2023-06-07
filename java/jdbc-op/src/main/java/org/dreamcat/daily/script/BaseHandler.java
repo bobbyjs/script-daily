@@ -7,6 +7,8 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.util.Properties;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.function.IConsumer;
 import org.dreamcat.common.io.UrlUtil;
@@ -19,13 +21,15 @@ import org.dreamcat.daily.script.common.CliUtil;
  * @author Jerry Will
  * @version 2023-03-30
  */
-public class BaseJdbcHandler {
+@Setter
+@Accessors(fluent = true)
+public class BaseHandler {
 
     @ArgParserField(value = {"j"})
     String jdbcUrl;
     @ArgParserField(value = {"u"})
     String user;
-    @ArgParserField(value = {"w"})
+    @ArgParserField(value = {"p"})
     String password;
     @ArgParserField(value = {"dc"})
     String driverClass;
@@ -36,17 +40,21 @@ public class BaseJdbcHandler {
     Properties props;
     @ArgParserField(value = {"y"})
     boolean yes; // execute sql or not actually
+    @ArgParserField(firstChar = true)
+    boolean help;
+    boolean debug;
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void run(IConsumer<Connection, ?> f) throws Exception {
-        if (!yes) {
+        if (yes || jdbcUrl != null) {
+            validate();
+        }
+        // jdbcUrl == null only if yes is false
+        if (jdbcUrl == null) {
             f.accept(null);
             return;
         }
-        // validate args
-        CliUtil.checkParameter(jdbcUrl, "jdbcUrl", "-j|--jdbc-url");
-        CliUtil.checkParameter(driverPath, "driverPath", "--dp|--driver-path");
-        CliUtil.checkParameter(driverClass, "driverClass", "--dc|--driver-class");
+
         if (isNotEmpty(user) && isNotEmpty(password)) {
             props.put("user", user);
             props.put("password", password);
@@ -67,5 +75,12 @@ public class BaseJdbcHandler {
         try (Connection connection = driver.connect(jdbcUrl, props)) {
             f.accept(connection);
         }
+    }
+
+    private void validate() {
+        // validate args
+        CliUtil.checkParameter(jdbcUrl, "jdbcUrl", "-j|--jdbc-url");
+        CliUtil.checkParameter(driverPath, "driverPath", "--dp|--driver-path");
+        CliUtil.checkParameter(driverClass, "driverClass", "--dc|--driver-class");
     }
 }

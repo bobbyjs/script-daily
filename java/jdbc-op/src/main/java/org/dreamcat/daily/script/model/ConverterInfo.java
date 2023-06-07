@@ -1,4 +1,4 @@
-package org.dreamcat.daily.script.util;
+package org.dreamcat.daily.script.model;
 
 import java.util.Set;
 import lombok.Data;

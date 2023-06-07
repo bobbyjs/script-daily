@@ -30,9 +30,9 @@ import org.dreamcat.common.util.StringUtil;
  * @author Jerry Will
  * @version 2023-06-06
  */
-@ArgParserType(allProperties = true, command = "type-table-batch")
-public class TypeTableBatchHandler extends BaseTypeTableHandler
-        implements ArgParserEntrypoint<TypeTableBatchHandler> {
+@ArgParserType(allProperties = true, command = "batch-type-table")
+public class BatchTypeTableHandler extends BaseTypeTableHandler
+        implements ArgParserEntrypoint<BatchTypeTableHandler> {
 
     @ArgParserField("f")
     private String file;
@@ -53,7 +53,7 @@ public class TypeTableBatchHandler extends BaseTypeTableHandler
 
     @Override
     @SneakyThrows
-    public void run(ArgParserContext<TypeTableBatchHandler> context) {
+    public void run(ArgParserContext<BatchTypeTableHandler> context) {
         if (help) {
             System.out.println(context.getHelp());
             return;
@@ -122,7 +122,6 @@ public class TypeTableBatchHandler extends BaseTypeTableHandler
         this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
                 .columnName(columnName)
                 .partitionColumnName(partitionColumnName)
-                .compact(compact)
                 .columnQuota(columnQuota)
                 .doubleQuota(doubleQuota)
                 .commentAlone(commentAlone)
@@ -134,7 +133,12 @@ public class TypeTableBatchHandler extends BaseTypeTableHandler
                 .converters(converters)
                 .batchSize(batchSize)
                 .rowNum(rowNum)
-                .setEnumValues(setEnumValues);
+                .setEnumValues(setEnumValues)
+                .compact(compact)
+                .rollingFile(rollingFile)
+                .rollingFileMaxSqlCount(rollingFileMaxSqlCount)
+                .yes(yes)
+                .debug(debug);
         typeTableHandler.afterPropertySet();
     }
 
@@ -163,7 +167,7 @@ public class TypeTableBatchHandler extends BaseTypeTableHandler
                 .partitionTypes(partitionTypes)
                 .columnNameCounter(new HashMap<>())
                 .partitionColumnNameCounter(new HashMap<>());
-        List<String> sqlList = typeTableHandler.genSql();
+        List<String> sqlList = typeTableHandler.genSqlList();
         if (!yes) {
             output(sqlList);
             return;
