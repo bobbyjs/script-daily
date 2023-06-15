@@ -48,6 +48,7 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler
     @ArgParserField(required = true, position = 0)
     private String tableName = "t_table_$i";
     boolean ignoreError; // ignore error when any TypeTableHandler failed
+    private double oneNullRatio = Double.MAX_VALUE;
 
     transient TypeTableHandler typeTableHandler;
 
@@ -131,6 +132,8 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler
                 .dataSourceType(dataSourceType)
                 .converterFile(converterFile)
                 .converters(converters)
+                .nullRatio(nullRatio)
+                .enableNeg(enableNeg)
                 .batchSize(batchSize)
                 .rowNum(rowNum)
                 .setEnumValues(setEnumValues)
@@ -166,7 +169,9 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler
                 .types(types)
                 .partitionTypes(partitionTypes)
                 .columnNameCounter(new HashMap<>())
-                .partitionColumnNameCounter(new HashMap<>());
+                .partitionColumnNameCounter(new HashMap<>())
+                .oneNullRatio(oneNullRatio);
+
         List<String> sqlList = typeTableHandler.genSqlList();
         if (!yes) {
             output(sqlList);

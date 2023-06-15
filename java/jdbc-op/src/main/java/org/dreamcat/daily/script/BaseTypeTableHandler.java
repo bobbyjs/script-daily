@@ -50,6 +50,8 @@ public class BaseTypeTableHandler extends BaseOutputHandler {
     String converterFile;
     // binary:cast($value as $type)
     Set<String> converters;
+    boolean enableNeg; // generate neg number for number types
+    double nullRatio = 0;
 
     @ArgParserField({"b"})
     int batchSize = 1;
@@ -57,7 +59,24 @@ public class BaseTypeTableHandler extends BaseOutputHandler {
     int rowNum = randi(1, 76);
     String setEnumValues = "a,b,c,d";
 
+    transient final SqlValueRandomGenerator gen = new SqlValueRandomGenerator()
+            .maxBitLength(1)
+            .addEnumAlias("enum8") // clickhouse
+            .addEnumAlias("enum16");
+
+    String convert(String literal, String typeName) {
+        if (nullRatio < 1 && nullRatio > 0) {
+            if (Math.random() < nullRatio) {
+                return gen.nullLiteral();
+            }
+        }
+        return null;
+    }
+
     void afterPropertySet() throws Exception {
+        gen.enableNeg(enableNeg)
+                .globalConvertor(this::convert);
+
         // builtin converters
         Map<String, List<ConverterInfo>> converterInfos = YamlUtil.fromJson(
                 ClassPathUtil.getResourceAsString("converters.yaml"),
@@ -115,9 +134,4 @@ public class BaseTypeTableHandler extends BaseOutputHandler {
         if (!columnQuota) return columnName;
         return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
     }
-
-    final SqlValueRandomGenerator gen = new SqlValueRandomGenerator()
-            .maxBitLength(1)
-            .addEnumAlias("enum8") // clickhouse
-            .addEnumAlias("enum16");
 }

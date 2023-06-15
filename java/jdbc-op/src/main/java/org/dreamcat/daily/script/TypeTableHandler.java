@@ -49,9 +49,11 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
     private List<String> partitionTypes;
     @ArgParserField(required = true, position = 0)
     private String tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
+    private double oneNullRatio = Double.MAX_VALUE;
 
     transient Map<String, MutableInt> columnNameCounter = new HashMap<>();
     transient Map<String, MutableInt> partitionColumnNameCounter = new HashMap<>();
+    transient OneNullRatioBasedGen oneNullRatioBasedGen;
 
     @SneakyThrows
     @Override
@@ -241,5 +243,45 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
             list.add(columnName + "=" + gen.generateLiteral(typeInfo.getTypeId()));
         }
         return String.format(" partition(%s)", String.join(",", list));
+    }
+
+    @Override
+    String convert(String literal, String typeName) {
+        literal = super.convert(literal, typeName);
+        if (literal != null) return literal;
+        if (oneNullRatio < 1 && oneNullRatio > 0) {
+            if (oneNullRatioBasedGen == null) {
+                oneNullRatioBasedGen = new OneNullRatioBasedGen(types.size(), oneNullRatio);
+            }
+            if (oneNullRatioBasedGen.generate()) {
+                return gen.nullLiteral();
+            }
+        }
+        return null;
+    }
+
+    static class OneNullRatioBasedGen {
+
+        // # * *
+        // * # *
+        // * * #
+        // * * *
+        // * * *
+        final int count;
+        final int total;
+        int offset;
+
+        OneNullRatioBasedGen(int count, double oneNullRatio) {
+            this.count = count;
+            this.total = (int)(count * count * (1 + 1 / oneNullRatio));
+        }
+
+        boolean generate() {
+            int r = offset / count;
+            int c = offset % count;
+            offset++;
+            if (offset >= total) offset = 0;
+            return r == c; // diagonal
+        }
     }
 }
