@@ -66,7 +66,7 @@ public class BaseTypeTableHandler extends BaseOutputHandler {
 
     String convert(String literal, String typeName) {
         if (nullRatio < 1 && nullRatio > 0) {
-            if (Math.random() < nullRatio) {
+            if (Math.random() <= nullRatio) {
                 return gen.nullLiteral();
             }
         }

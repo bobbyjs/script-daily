@@ -49,11 +49,12 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
     private List<String> partitionTypes;
     @ArgParserField(required = true, position = 0)
     private String tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
-    private double oneNullRatio = Double.MAX_VALUE;
+    // like this 'ratio,rows', example: 0.5,10
+    private String smartRowNullRatio;
 
     transient Map<String, MutableInt> columnNameCounter = new HashMap<>();
     transient Map<String, MutableInt> partitionColumnNameCounter = new HashMap<>();
-    transient OneNullRatioBasedGen oneNullRatioBasedGen;
+    transient SmartNullRatioBasedGen smartNullRatioBasedGen;
 
     @SneakyThrows
     @Override
@@ -93,7 +94,24 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
         }
 
         this.afterPropertySet();
+        this.reset();
         run(this::handle);
+    }
+
+    @Override
+    void afterPropertySet() throws Exception {
+        super.afterPropertySet();
+        if (ObjectUtil.isNotBlank(smartRowNullRatio)) {
+            Pair<Double, Integer> pair = Pair.fromSeparable(smartRowNullRatio, ",",
+                    Double::valueOf, Integer::valueOf);
+            if (!pair.isFull()) {
+                throw new IllegalArgumentException(
+                        "invalid smartRowNullRatio: " + smartRowNullRatio);
+            }
+            double ratio = pair.first();
+            int rows = pair.second();
+            this.smartNullRatioBasedGen = new SmartNullRatioBasedGen(ratio, rows);
+        }
     }
 
     void handle(Connection connection) throws Exception {
@@ -249,39 +267,53 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
     String convert(String literal, String typeName) {
         literal = super.convert(literal, typeName);
         if (literal != null) return literal;
-        if (oneNullRatio < 1 && oneNullRatio > 0) {
-            if (oneNullRatioBasedGen == null) {
-                oneNullRatioBasedGen = new OneNullRatioBasedGen(types.size(), oneNullRatio);
-            }
-            if (oneNullRatioBasedGen.generate()) {
-                return gen.nullLiteral();
-            }
+        if (smartNullRatioBasedGen != null && smartNullRatioBasedGen.generate()) {
+            return gen.nullLiteral();
         }
         return null;
     }
 
-    static class OneNullRatioBasedGen {
+    void reset() {
+        if (smartNullRatioBasedGen != null) {
+            smartNullRatioBasedGen.reset(types.size());
+        }
+    }
+
+    static class SmartNullRatioBasedGen {
 
         // # * *
         // * # *
         // * * #
         // * * *
         // * * *
-        final int count;
-        final int total;
+        final int rows;
+        final double ratio;
+        int columns;
+        int total;
         int offset;
 
-        OneNullRatioBasedGen(int count, double oneNullRatio) {
-            this.count = count;
-            this.total = (int)(count * count * (1 + 1 / oneNullRatio));
+        SmartNullRatioBasedGen(double ratio, int rows) {
+            this.ratio = ratio;
+            this.rows = rows;
+        }
+
+        void reset(int columns) {
+            this.columns = columns;
+            this.total = columns * rows;
+            this.offset = 0;
         }
 
         boolean generate() {
-            int r = offset / count;
-            int c = offset % count;
-            offset++;
-            if (offset >= total) offset = 0;
-            return r == c; // diagonal
+            if (total == 0) {
+                throw new IllegalStateException("must call rest once before call generate");
+            }
+            if (offset >= total) {
+                offset = 0;
+            }
+            if (offset++ < columns) {
+                return Math.random() <= ratio;
+            }
+            return false;
         }
     }
 }

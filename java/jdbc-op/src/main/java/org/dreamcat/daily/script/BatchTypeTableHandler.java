@@ -48,7 +48,7 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler
     @ArgParserField(required = true, position = 0)
     private String tableName = "t_table_$i";
     boolean ignoreError; // ignore error when any TypeTableHandler failed
-    private double oneNullRatio = Double.MAX_VALUE;
+    private String smartRowNullRatio;
 
     transient TypeTableHandler typeTableHandler;
 
@@ -121,6 +121,7 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler
     @Override
     void afterPropertySet() throws Exception {
         this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
+                .smartRowNullRatio(smartRowNullRatio)
                 .columnName(columnName)
                 .partitionColumnName(partitionColumnName)
                 .columnQuota(columnQuota)
@@ -169,8 +170,8 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler
                 .types(types)
                 .partitionTypes(partitionTypes)
                 .columnNameCounter(new HashMap<>())
-                .partitionColumnNameCounter(new HashMap<>())
-                .oneNullRatio(oneNullRatio);
+                .partitionColumnNameCounter(new HashMap<>());
+        typeTableHandler.reset();
 
         List<String> sqlList = typeTableHandler.genSqlList();
         if (!yes) {

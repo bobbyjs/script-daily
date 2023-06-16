@@ -81,14 +81,14 @@ class TypedTableHandlerTest {
     void testNullNeg() {
         new SubcommandArgParser(App.class).run("type-table", "my_table",
                 "-t", "int", "string", "date",
-                "--enable-neg", "--null-ratio", "0.1", "-b", "10", "-n", "100");
+                "--enable-neg", "--null-ratio", "0.25", "-b", "10", "-n", "100");
     }
 
     @Test
     void testSmartNull() {
         new SubcommandArgParser(App.class).run("type-table", "my_table",
                 "-t", "int", "string", "date",
-                "--enable-neg", "--smart-null-ratio", "0.5", "-b", "10", "-n", "100");
+                "--enable-neg", "--smart-row-null-ratio", "0.5,2", "-b", "10", "-n", "100");
     }
 }
 /*
