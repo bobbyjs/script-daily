@@ -17,7 +17,7 @@ import org.dreamcat.daily.script.model.TypeInfo;
  * @version 2023-05-29
  */
 @ArgParserType(allProperties = true, command = "hbase-type-table")
-public class HbaseTypeTableHandler implements ArgParserEntrypoint<HbaseTypeTableHandler> {
+public class HbaseTypeTableHandler implements ArgParserEntrypoint {
 
     @ArgParserField("f")
     private String file;
@@ -33,7 +33,7 @@ public class HbaseTypeTableHandler implements ArgParserEntrypoint<HbaseTypeTable
     private String setEnumValues = "a,b,c,d";
 
     @Override
-    public void run(ArgParserContext<HbaseTypeTableHandler> context) {
+    public void run(ArgParserContext context) {
         if (help) {
             System.out.println(context.getHelp());
             return;

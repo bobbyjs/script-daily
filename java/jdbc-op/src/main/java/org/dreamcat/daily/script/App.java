@@ -24,7 +24,7 @@ import org.dreamcat.common.util.SystemUtil;
                 HbaseTypeTableHandler.class,
         }
 )
-public class App implements ArgParserEntrypoint<App> {
+public class App implements ArgParserEntrypoint {
 
     boolean help;
 
@@ -49,7 +49,7 @@ public class App implements ArgParserEntrypoint<App> {
     }
 
     @Override
-    public void run(ArgParserContext<App> context) {
+    public void run(ArgParserContext context) {
         if (help) {
             System.out.println(context.getHelp());
             return;

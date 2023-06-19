@@ -36,7 +36,7 @@ import org.dreamcat.daily.script.model.TypeInfo;
 @Setter
 @Accessors(fluent = true)
 @ArgParserType(allProperties = true, command = "type-table")
-public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserEntrypoint<TypeTableHandler> {
+public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserEntrypoint {
 
     // one type per line: varchar(%d), decimal(%d, %d)
     @ArgParserField("f")
@@ -50,15 +50,15 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
     @ArgParserField(required = true, position = 0)
     private String tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
     // like this 'ratio,rows', example: 0.5,10
-    private String smartRowNullRatio;
+    private String rowNullRatio;
 
     transient Map<String, MutableInt> columnNameCounter = new HashMap<>();
     transient Map<String, MutableInt> partitionColumnNameCounter = new HashMap<>();
-    transient SmartNullRatioBasedGen smartNullRatioBasedGen;
+    transient RowNullRatioBasedGen rowNullRatioBasedGen;
 
     @SneakyThrows
     @Override
-    public void run(ArgParserContext<TypeTableHandler> context) {
+    public void run(ArgParserContext context) {
         if (help) {
             System.out.println(context.getHelp());
             return;
@@ -101,16 +101,16 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
     @Override
     void afterPropertySet() throws Exception {
         super.afterPropertySet();
-        if (ObjectUtil.isNotBlank(smartRowNullRatio)) {
-            Pair<Double, Integer> pair = Pair.fromSeparable(smartRowNullRatio, ",",
+        if (ObjectUtil.isNotBlank(rowNullRatio)) {
+            Pair<Double, Integer> pair = Pair.fromSep(rowNullRatio, ",",
                     Double::valueOf, Integer::valueOf);
             if (!pair.isFull()) {
                 throw new IllegalArgumentException(
-                        "invalid smartRowNullRatio: " + smartRowNullRatio);
+                        "invalid smartRowNullRatio: " + rowNullRatio);
             }
             double ratio = pair.first();
             int rows = pair.second();
-            this.smartNullRatioBasedGen = new SmartNullRatioBasedGen(ratio, rows);
+            this.rowNullRatioBasedGen = new RowNullRatioBasedGen(ratio, rows);
         }
     }
 
@@ -267,32 +267,27 @@ public class TypeTableHandler extends BaseTypeTableHandler implements ArgParserE
     String convert(String literal, String typeName) {
         literal = super.convert(literal, typeName);
         if (literal != null) return literal;
-        if (smartNullRatioBasedGen != null && smartNullRatioBasedGen.generate()) {
+        if (rowNullRatioBasedGen != null && rowNullRatioBasedGen.generate()) {
             return gen.nullLiteral();
         }
         return null;
     }
 
     void reset() {
-        if (smartNullRatioBasedGen != null) {
-            smartNullRatioBasedGen.reset(types.size());
+        if (rowNullRatioBasedGen != null) {
+            rowNullRatioBasedGen.reset(types.size());
         }
     }
 
-    static class SmartNullRatioBasedGen {
+    static class RowNullRatioBasedGen {
 
-        // # * *
-        // * # *
-        // * * #
-        // * * *
-        // * * *
         final int rows;
         final double ratio;
         int columns;
         int total;
         int offset;
 
-        SmartNullRatioBasedGen(double ratio, int rows) {
+        RowNullRatioBasedGen(double ratio, int rows) {
             this.ratio = ratio;
             this.rows = rows;
         }

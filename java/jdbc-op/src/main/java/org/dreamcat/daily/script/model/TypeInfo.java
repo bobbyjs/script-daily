@@ -1,11 +1,19 @@
 package org.dreamcat.daily.script.model;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.dreamcat.common.Pair;
+import org.dreamcat.common.sql.JdbcColumnDef;
+import org.dreamcat.common.sql.JdbcUtil;
+import org.dreamcat.common.util.CollectionUtil;
 
 /**
  * @author Jerry Will
@@ -60,5 +68,33 @@ public class TypeInfo {
                     .replace(")", "")
                     .replace("'", "");
         }
+    }
+
+    public static Pair<List<String>, List<String>> getTypes(Connection connection, String tableName,
+            Set<String> ignoredColumns, Set<String> partitionColumns) throws SQLException {
+        String s = null, t = tableName;
+        if (tableName.contains(".")) {
+            String[] ss = tableName.split("\\.", 2);
+            s = ss[0];
+            t = ss[1];
+        }
+        List<JdbcColumnDef> columns = JdbcUtil.getTableSchema(connection, s, t);
+        columns = columns.stream().filter(column -> !ignoredColumns.contains(column.getName()))
+                .collect(Collectors.toList());
+
+        Pair<List<JdbcColumnDef>, List<JdbcColumnDef>> pair = CollectionUtil.partitioningBy(
+                columns, column -> !partitionColumns.contains(column.getName()));
+
+        List<String> types = CollectionUtil.mapToList(pair.first(), column -> {
+            String columnName = column.getName();
+            String type = column.getType();
+            return type + ":" + columnName;
+        });
+        List<String> partitionTypes = CollectionUtil.mapToList(pair.second(), column -> {
+            String columnName = column.getName();
+            String type = column.getType();
+            return type + ":" + columnName;
+        });
+        return Pair.of(types, partitionTypes);
     }
 }

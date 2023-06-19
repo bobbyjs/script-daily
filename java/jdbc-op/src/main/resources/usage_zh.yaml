@@ -9,6 +9,8 @@ header: jdbc-op jdbc命令行工具
 helpDesc:
   help: 打印此帮助
 
+inheritHelpParam:
+  rowNullRatio: <ratio,rows>
 inheritHelpDesc:
   help: 打印此帮助
   debug: 打印debug信息
@@ -36,6 +38,8 @@ inheritHelpDesc:
   setEnumValues: set和enum类型的枚举值，默认为a,b,c,d
   rollingFile: 生成的滚动SQL文件，例子：output_${i+100}.sql
   rollingFileMaxSqlCount: 指定每个滚动小文件的最大SQL条数
+  nullRatio: 每列生成的值，有多少可能性为null，合法取值范围为[0, 1]
+  rowNullRatio: 每rows行中的一行的每列的值，有ratio的可能性为null,例子：0.5,10
 
 subcommands:
   insert-random:

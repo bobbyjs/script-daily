@@ -16,14 +16,14 @@ import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.sql.JdbcUtil;
 import org.dreamcat.common.util.CollectionUtil;
+import org.dreamcat.daily.script.model.TypeInfo;
 
 /**
  * @author Jerry Will
  * @version 2023-03-22
  */
 @ArgParserType(allProperties = true, command = "insert-random")
-public class InsertRandomHandler extends BaseOutputHandler
-        implements ArgParserEntrypoint<InsertRandomHandler> {
+public class InsertRandomHandler extends BaseOutputHandler implements ArgParserEntrypoint {
 
     @ArgParserField(required = true, position = 0)
     private String tableName;
@@ -49,7 +49,7 @@ public class InsertRandomHandler extends BaseOutputHandler
 
     @SneakyThrows
     @Override
-    public void run(ArgParserContext<InsertRandomHandler> context) {
+    public void run(ArgParserContext context) {
         if (help) {
             System.out.println(context.getHelp());
             return;
@@ -85,29 +85,8 @@ public class InsertRandomHandler extends BaseOutputHandler
     }
 
     void handle(Connection connection) throws Exception {
-        String s = null, t = tableName;
-        if (tableName.contains(".")) {
-            String[] ss = tableName.split("\\.", 2);
-            s = ss[0];
-            t = ss[1];
-        }
-        List<JdbcColumnDef> columns = JdbcUtil.getTableSchema(connection, s, t);
-        columns = columns.stream().filter(column -> !ignoredColumns.contains(column.getName()))
-                .collect(Collectors.toList());
-
-        Pair<List<JdbcColumnDef>, List<JdbcColumnDef>> pair = CollectionUtil.partitioningBy(
-                columns, column -> !partitionColumns.contains(column.getName()));
-
-        List<String> types = CollectionUtil.mapToList(pair.first(), column -> {
-            String columnName = column.getName();
-            String type = column.getType();
-            return type + ":" + columnName;
-        });
-        List<String> partitionTypes = CollectionUtil.mapToList(pair.second(), column -> {
-            String columnName = column.getName();
-            String type = column.getType();
-            return type + ":" + columnName;
-        });
+        Pair<List<String>, List<String>> pair = TypeInfo.getTypes(connection, tableName, ignoredColumns, partitionColumns);
+        List<String> types = pair.first(), partitionTypes = pair.second();
 
         typeTableHandler
                 .types(types)

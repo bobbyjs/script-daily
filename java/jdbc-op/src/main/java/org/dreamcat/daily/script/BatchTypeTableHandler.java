@@ -31,8 +31,7 @@ import org.dreamcat.common.util.StringUtil;
  * @version 2023-06-06
  */
 @ArgParserType(allProperties = true, command = "batch-type-table")
-public class BatchTypeTableHandler extends BaseTypeTableHandler
-        implements ArgParserEntrypoint<BatchTypeTableHandler> {
+public class BatchTypeTableHandler extends BaseTypeTableHandler implements ArgParserEntrypoint {
 
     @ArgParserField("f")
     private String file;
@@ -48,13 +47,13 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler
     @ArgParserField(required = true, position = 0)
     private String tableName = "t_table_$i";
     boolean ignoreError; // ignore error when any TypeTableHandler failed
-    private String smartRowNullRatio;
+    private String rowNullRatio;
 
     transient TypeTableHandler typeTableHandler;
 
     @Override
     @SneakyThrows
-    public void run(ArgParserContext<BatchTypeTableHandler> context) {
+    public void run(ArgParserContext context) {
         if (help) {
             System.out.println(context.getHelp());
             return;
@@ -121,7 +120,7 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler
     @Override
     void afterPropertySet() throws Exception {
         this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
-                .smartRowNullRatio(smartRowNullRatio)
+                .rowNullRatio(rowNullRatio)
                 .columnName(columnName)
                 .partitionColumnName(partitionColumnName)
                 .columnQuota(columnQuota)
