@@ -47,7 +47,7 @@ public class BaseHandler {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void run(IConsumer<Connection, ?> f) throws Exception {
         if (yes || jdbcUrl != null) {
-            validate();
+            validateJdbc();
         }
         // jdbcUrl == null only if yes is false
         if (jdbcUrl == null) {
@@ -77,7 +77,7 @@ public class BaseHandler {
         }
     }
 
-    private void validate() {
+    protected void validateJdbc() {
         // validate args
         CliUtil.checkParameter(jdbcUrl, "jdbcUrl", "-j|--jdbc-url");
         CliUtil.checkParameter(driverPath, "driverPath", "--dp|--driver-path");
