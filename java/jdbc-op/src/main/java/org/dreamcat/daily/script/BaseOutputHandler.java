@@ -1,6 +1,9 @@
 package org.dreamcat.daily.script;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -26,6 +29,20 @@ public class BaseOutputHandler extends BaseHandler {
 
     transient int sqlCountCounter;
     transient int rollingFileIndex = 1;
+
+    void output(List<String> sqlList, Connection connection) throws IOException, SQLException {
+        if (!yes) {
+            output(sqlList);
+            return;
+        }
+
+        try (Statement statement = connection.createStatement()) {
+            output(sqlList);
+            for (String sql : sqlList) {
+                statement.execute(sql);
+            }
+        }
+    }
 
     void output(List<String> sqlList) throws IOException {
         int size = sqlList.size();

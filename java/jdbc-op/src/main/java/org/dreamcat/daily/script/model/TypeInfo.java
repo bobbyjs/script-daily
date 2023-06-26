@@ -3,17 +3,22 @@ package org.dreamcat.daily.script.model;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.dreamcat.common.MutableInt;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.sql.JdbcUtil;
+import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.CollectionUtil;
+import org.dreamcat.common.util.ObjectUtil;
 
 /**
  * @author Jerry Will
@@ -37,9 +42,14 @@ public class TypeInfo {
             this.columnName = tt[1].trim();
         }
         if (Arrays.asList("set", "enum", "enum8", "enum16").contains(type.toLowerCase())) {
-            this.typeName = this.typeId = String.format("%s(%s)", type, Arrays.stream(setEnumValues.split(","))
-                    .map(it -> "'" + it + "'")
-                    .collect(Collectors.joining(",")));
+            if (ObjectUtil.isEmpty(setEnumValues)) {
+                this.typeName = this.typeId = type;
+            } else {
+                this.typeName = this.typeId = String.format("%s(%s)", type,
+                        Arrays.stream(setEnumValues.split(","))
+                                .map(it -> "'" + it + "'")
+                                .collect(Collectors.joining(",")));
+            }
             if (this.columnName == null) this.columnName = type;
             return;
         }
@@ -70,7 +80,22 @@ public class TypeInfo {
         }
     }
 
-    public static Pair<List<String>, List<String>> getTypes(Connection connection, String tableName,
+    public String computeColumnName(String columnNameTemplate, Map<String, MutableInt> columnNameCounter) {
+        int index = columnNameCounter.computeIfAbsent(columnName, k -> new MutableInt(0)).incrAndGet();
+        return InterpolationUtil.format(columnNameTemplate,
+                "t", columnName, "type", columnName,
+                "i", index + "", "index", index + "");
+    }
+
+    public static Pair<List<String>, List<String>> getTypes(
+            Connection connection, String tableName)
+            throws SQLException {
+        return getTypes(connection, tableName,
+                Collections.emptySet(), Collections.emptySet());
+    }
+
+    public static Pair<List<String>, List<String>> getTypes(
+            Connection connection, String tableName,
             Set<String> ignoredColumns, Set<String> partitionColumns) throws SQLException {
         String s = null, t = tableName;
         if (tableName.contains(".")) {

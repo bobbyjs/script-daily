@@ -1,5 +1,7 @@
 package org.dreamcat.daily.script;
 
+import static org.dreamcat.common.util.RandomUtil.randi;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ import org.dreamcat.common.util.StringUtil;
  * @version 2023-06-06
  */
 @ArgParserType(allProperties = true, command = "batch-type-table")
-public class BatchTypeTableHandler extends BaseTypeTableHandler implements ArgParserEntrypoint {
+public class BatchTypeTableHandler extends BaseDdlOutputHandler implements ArgParserEntrypoint {
 
     @ArgParserField("f")
     private String file;
@@ -48,6 +50,10 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler implements ArgPa
     private String tableName = "t_table_$i";
     boolean ignoreError; // ignore error when any TypeTableHandler failed
     private String rowNullRatio;
+    @ArgParserField({"b"})
+    int batchSize = 1;
+    @ArgParserField({"n"})
+    int rowNum = randi(1, 76);
 
     transient TypeTableHandler typeTableHandler;
 
@@ -118,8 +124,12 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler implements ArgPa
     }
 
     @Override
-    void afterPropertySet() throws Exception {
+    protected void afterPropertySet() throws Exception {
+        super.afterPropertySet();
+
         this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
+                .batchSize(batchSize)
+                .rowNum(rowNum)
                 .rowNullRatio(rowNullRatio)
                 .columnName(columnName)
                 .partitionColumnName(partitionColumnName)
@@ -129,17 +139,15 @@ public class BatchTypeTableHandler extends BaseTypeTableHandler implements ArgPa
                 .columnCommentSql(columnCommentSql)
                 .tableSuffixSql(tableSuffixSql)
                 .extraColumnSql(extraColumnSql)
+                .setEnumValues(setEnumValues)
+                .compact(compact)
+                .rollingFile(rollingFile)
+                .rollingFileMaxSqlCount(rollingFileMaxSqlCount)
                 .dataSourceType(dataSourceType)
                 .converterFile(converterFile)
                 .converters(converters)
                 .nullRatio(nullRatio)
                 .enableNeg(enableNeg)
-                .batchSize(batchSize)
-                .rowNum(rowNum)
-                .setEnumValues(setEnumValues)
-                .compact(compact)
-                .rollingFile(rollingFile)
-                .rollingFileMaxSqlCount(rollingFileMaxSqlCount)
                 .yes(yes)
                 .debug(debug);
         typeTableHandler.afterPropertySet();

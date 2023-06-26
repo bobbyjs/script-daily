@@ -63,22 +63,24 @@ public class InsertRandomHandler extends BaseOutputHandler implements ArgParserE
         run(this::handle);
     }
 
-    void afterPropertySet() throws Exception {
+    protected void afterPropertySet() throws Exception {
+        super.afterPropertySet();
+
         this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
+                .batchSize(batchSize)
+                .rowNum(rowNum)
                 .tableName(tableName)
                 .columnName("$type")
                 .partitionColumnName("$type")
                 .columnQuota(columnQuota)
                 .doubleQuota(doubleQuota)
-                .dataSourceType(dataSourceType)
-                .converterFile(converterFile)
-                .converters(converters)
-                .batchSize(batchSize)
-                .rowNum(rowNum)
                 .setEnumValues(setEnumValues)
                 .compact(compact)
                 .rollingFile(rollingFile)
                 .rollingFileMaxSqlCount(rollingFileMaxSqlCount)
+                .dataSourceType(dataSourceType)
+                .converterFile(converterFile)
+                .converters(converters)
                 .yes(yes)
                 .debug(debug);
         typeTableHandler.afterPropertySet();

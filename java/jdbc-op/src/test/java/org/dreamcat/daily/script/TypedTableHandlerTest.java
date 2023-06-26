@@ -31,8 +31,8 @@ class TypedTableHandlerTest {
     @Test
     void testMysql() throws Exception {
         List<String> args = new ArrayList<>();
-        args.addAll(Arrays.asList("type-table", "my_table", "--column-quotation", "--debug",
-                "--extra-column-ddl", "id bigint(20) not null auto_increment primary key",
+        args.addAll(Arrays.asList("type-table", "my_table", "--column-quota", "--debug",
+                "--extra-column-sql", "id bigint(20) not null auto_increment primary key",
                 "-c", "Column Type: $type", "-t"));
         args.addAll(Arrays.asList(ClassPathUtil.getResourceAsString(
                 "mysql-types.txt").split("\n")));
@@ -43,7 +43,7 @@ class TypedTableHandlerTest {
     @Test
     void testHive() throws Exception {
         List<String> args = new ArrayList<>();
-        args.addAll(Arrays.asList("type-table", "my_table", "--column-quotation",
+        args.addAll(Arrays.asList("type-table", "my_table", "--column-quota",
                 "-t"));
         args.addAll(Arrays.asList(ClassPathUtil.getResourceAsString(
                 "hive-types.txt").split("\n")));
@@ -68,10 +68,10 @@ class TypedTableHandlerTest {
 
     @Test
     void testPresto() throws Exception {
-        List<String> args = Arrays.asList("type-table", "test.my_table", "--quota", "--debug",
+        List<String> args = Arrays.asList("type-table", "test.my_table", "--column-quota", "--debug",
                 "--extra-column-sql", "id bigint(20) not null auto_increment primary key",
                 "-c", "Column Type: $type",
-                "-C", "${type}_col_$index", "-P", "p_${type}_col_$index",
+                "--cn", "${type}_col_$index", "--pcn", "p_${type}_col_$index",
                 "-F", ClassPathUtil.getResourceAsString("presto-mapping-types.txt"));
         SubcommandArgParser argParser = new SubcommandArgParser(App.class);
         argParser.run(args);
@@ -88,7 +88,7 @@ class TypedTableHandlerTest {
     void testSmartNull() {
         new SubcommandArgParser(App.class).run("type-table", "my_table",
                 "-t", "int", "string", "date",
-                "--enable-neg", "--smart-row-null-ratio", "0.5,2", "-b", "10", "-n", "100");
+                "--enable-neg", "--row-null-ratio", "0.5,2", "-b", "10", "-n", "100");
     }
 }
 /*
