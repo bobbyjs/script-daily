@@ -5,4 +5,3 @@ float: float, float unsigned, double unsigned, decimal(%d,%d), decimal(%d,%d) un
 date: date
 time: time
 datetime: timestamp, datetime
-null: *

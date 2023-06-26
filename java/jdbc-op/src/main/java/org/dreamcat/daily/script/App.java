@@ -22,6 +22,8 @@ import org.dreamcat.common.util.SystemUtil;
                 TypeTableHandler.class,
                 BatchTypeTableHandler.class,
                 HbaseTypeTableHandler.class,
+                ImportTypeHandler.class,
+                ImportTypeCsvHandler.class,
         }
 )
 public class App implements ArgParserEntrypoint {

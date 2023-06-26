@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
  * @author Jerry Will
  * @version 2023-04-27
  */
-public class BatchTypeTableHandlerTest {
+class BatchTypeTableHandlerTest {
 
     @Test
     void testFile() throws Exception {

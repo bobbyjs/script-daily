@@ -6,12 +6,16 @@ import java.io.StringReader;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.Setter;
@@ -42,11 +46,12 @@ import org.dreamcat.daily.script.model.TypeInfo;
 @ArgParserType(allProperties = true, command = "import-table-csv")
 public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgParserEntrypoint {
 
-    // partition types need be in the head columns
+    // partition is unsupported
     @ArgParserField("f")
     private String file;
     @ArgParserField("F")
     private String fileContent;
+    @ArgParserField(required = true, position = 0)
     private String tableName;
     @ArgParserField("C")
     private boolean createTable;
@@ -59,7 +64,7 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
     @ArgParserField("T")
     private String textTypeFileContent;
 
-    transient Map<String, List<String>> textTypeMap;
+    transient EnumMap<TextValueType, List<String>> textTypeMap;
 
     @SneakyThrows
     @Override
@@ -80,6 +85,16 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
                 System.exit(1);
             }
             this.textTypeMap = getTextTypeMap();
+            if (!textTypeMap.containsKey(TextValueType.NULL)) {
+                List<String> all = textTypeMap.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+                textTypeMap.put(TextValueType.NULL, all);
+            }
+            Set<TextValueType> both = new HashSet<>(Arrays.asList(TextValueType.values()));
+            both.removeAll(textTypeMap.keySet());
+            if (!both.isEmpty()) {
+                System.err.println("miss text type: " + both);
+                System.exit(1);
+            }
         }
 
         List<List<String>> rows;
@@ -173,9 +188,9 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
             for (int i = 0; i < count; i++) {
                 String cell = row.get(i);
                 String literal = getOneValue(cell, typeInfos.get(i).getTypeId());
-                value.set(i, literal);
+                value.add(literal);
             }
-            valueSqlList.add("(" + String.join(",", value) + "）");
+            valueSqlList.add("(" + String.join(",", value) + ")");
         }
         return String.join(",", valueSqlList);
     }
@@ -192,7 +207,7 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
     // data detect
     private List<String> getTypesByData(List<List<String>> rows, List<String> header) {
         int headerWidth = header.size();
-        List<Map<String, MutableInt>> typeCounter = new ArrayList<>(headerWidth);
+        List<Map<TextValueType, MutableInt>> typeCounter = new ArrayList<>(headerWidth);
         header.forEach(it -> {
             typeCounter.add(new LinkedHashMap<>());
         });
@@ -200,7 +215,7 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
         for (List<String> row : rows) {
             for (int i = 0; i < headerWidth; i++) {
                 String value = row.get(i);
-                String textValueType = TextValueType.detect(value).name();
+                TextValueType textValueType = TextValueType.detect(value);
                 typeCounter.get(i).computeIfAbsent(textValueType, k -> new MutableInt(0))
                         .incrAndGet();
             }
@@ -208,11 +223,11 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
 
         // compute top text-type
         List<String> types = new ArrayList<>();
-        Map<String, MutableInt> textTypeUsedIndexMap = new HashMap<>();
+        Map<TextValueType, MutableInt> textTypeUsedIndexMap = new HashMap<>();
         for (int i = 0; i < typeCounter.size(); i++) {
-            Map<String, MutableInt> m = typeCounter.get(i);
-            Entry<String, MutableInt> topEntry = null;
-            for (Entry<String, MutableInt> entry : m.entrySet()) {
+            Map<TextValueType, MutableInt> m = typeCounter.get(i);
+            Entry<TextValueType, MutableInt> topEntry = null;
+            for (Entry<TextValueType, MutableInt> entry : m.entrySet()) {
                 if (topEntry == null || entry.getValue().compareTo(topEntry.getValue()) > 0) {
                     topEntry = entry;
                 }
@@ -221,7 +236,7 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
                 System.err.println("no enough data to detect text-type for column " + (i + 1));
                 System.exit(1);
             }
-            String textValueType = topEntry.getKey();
+            TextValueType textValueType = topEntry.getKey();
             List<String> candidateList = textTypeMap.get(textValueType);
             int index = textTypeUsedIndexMap.computeIfAbsent(textValueType, k -> new MutableInt(0)).getAndIncr();
             index %= candidateList.size();
@@ -233,7 +248,7 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
         return types;
     }
 
-    private Map<String, List<String>> getTextTypeMap() throws IOException {
+    private EnumMap<TextValueType, List<String>> getTextTypeMap() throws IOException {
         List<String> lines;
         if (ObjectUtil.isNotEmpty(textTypeFile)) {
             lines = FileUtil.readAsList(textTypeFile);
@@ -249,9 +264,21 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
                         System.exit(1);
                     }
                     String textType = pair[0].trim();
+                    TextValueType textValueType = null;
+                    for (TextValueType valueType : TextValueType.values()) {
+                        if (valueType.name().equalsIgnoreCase(textType)) {
+                            textValueType = valueType;
+                            break;
+                        }
+                    }
+                    if (textValueType == null) {
+                        System.err.println("invalid format line in your text-type-file: " + line);
+                        System.exit(1);
+                    }
                     List<String> types = Arrays.stream(pair[1].trim().split(",")).map(String::trim)
                             .collect(Collectors.toList());
-                    return Pair.of(textType, types);
-                }).collect(Pair.mapCollector());
+                    return Pair.of(textValueType, types);
+                }).collect(Collectors.toMap(Pair::getKey, Pair::getValue,
+                        (a, b) -> a, () -> new EnumMap<>(TextValueType.class)));
     }
 }
