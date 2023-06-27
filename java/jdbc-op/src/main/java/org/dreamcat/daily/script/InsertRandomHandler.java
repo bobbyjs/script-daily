@@ -6,16 +6,12 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserContext;
 import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
-import org.dreamcat.common.sql.JdbcColumnDef;
-import org.dreamcat.common.sql.JdbcUtil;
-import org.dreamcat.common.util.CollectionUtil;
 import org.dreamcat.daily.script.model.TypeInfo;
 
 /**

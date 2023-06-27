@@ -18,12 +18,16 @@ import org.dreamcat.common.util.SystemUtil;
         allProperties = true,
         firstChar = true,
         subcommands = {
+                // insert
                 InsertRandomHandler.class,
+                // type
                 TypeTableHandler.class,
                 BatchTypeTableHandler.class,
                 HbaseTypeTableHandler.class,
+                // import
                 ImportTypeHandler.class,
                 ImportTypeCsvHandler.class,
+                ImportTypeExcelHandler.class
         }
 )
 public class App implements ArgParserEntrypoint {

@@ -58,6 +58,7 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
     @ArgParserField({"b"})
     int batchSize = 1;
 
+    private boolean tsv;
     private boolean emptyStringAsNull;
     @ArgParserField("t")
     private String textTypeFile;
@@ -73,7 +74,10 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
             System.out.println(context.getHelp());
             return;
         }
+        run();
+    }
 
+    public void run() throws Exception {
         if (ObjectUtil.isEmpty(file) && ObjectUtil.isBlank(fileContent)) {
             System.err.println(
                     "required arg: -f|--file <file> or -F|--file-content <content>");
@@ -99,9 +103,17 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
 
         List<List<String>> rows;
         if (ObjectUtil.isNotEmpty(file)) {
-            rows = CsvUtil.parse(new File(file));
+            if (tsv) {
+                rows = CsvUtil.parseTsv(new File(file));
+            } else {
+                rows = CsvUtil.parse(new File(file));
+            }
         } else {
-            rows = CsvUtil.parse(new StringReader(fileContent));
+            if (tsv) {
+                rows = CsvUtil.parseTsv(new StringReader(fileContent));
+            } else {
+                rows = CsvUtil.parse(new StringReader(fileContent));
+            }
         }
         if (rows.isEmpty()) {
             System.err.println("require some data in your csf file");
