@@ -1,5 +1,9 @@
 package org.dreamcat.daily.script;
 
+import static org.dreamcat.common.util.CollectionUtil.mapToList;
+import static org.dreamcat.common.util.FunctionUtil.firstNotNull;
+import static org.dreamcat.common.util.ListUtil.getOrNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -31,6 +35,7 @@ import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.excel.ExcelUtil;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.text.TextValueType;
+import org.dreamcat.common.util.ArrayUtil;
 import org.dreamcat.common.util.CollectionUtil;
 import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.common.util.ObjectUtil;
@@ -48,16 +53,23 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
 
     @ArgParserField("f")
     private String file;
+    @ArgParserField("L")
     private boolean createTable;
     @ArgParserField({"b"})
     int batchSize = 1;
+    boolean castAs;
 
     @ArgParserField("t")
     private String textTypeFile;
     @ArgParserField("T")
     private String textTypeFileContent;
+    @ArgParserField("sn")
+    private List<String> sheetNames; // mapping to table name
+    @ArgParserField("scn")
+    private List<String> sheetColumnNames; // comma sep
 
     transient EnumMap<TextValueType, List<String>> textTypeMap;
+    transient List<List<String>> sheetColumnNameList = Collections.emptyList();
 
     @SneakyThrows
     @Override
@@ -66,10 +78,6 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
             System.out.println(context.getHelp());
             return;
         }
-        run();
-    }
-
-    public void run() throws Exception {
         if (ObjectUtil.isEmpty(file)) {
             System.err.println("required arg: -f|--file <file>");
             System.exit(1);
@@ -91,24 +99,52 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
                 System.exit(1);
             }
         }
+        if (ObjectUtil.isNotEmpty(sheetColumnNames)) {
+            sheetColumnNameList = mapToList(sheetColumnNames, it -> ArrayUtil.mapToList(
+                    it.split(","), String::trim));
+        }
+        run();
+    }
 
+    @Override
+    protected void afterPropertySet() throws Exception {
+        super.afterPropertySet();
+    }
+
+    public void run() throws Exception {
         Map<String, List<List<Object>>> sheets = ExcelUtil.parseAsMap(new File(file));
+        this.afterPropertySet();
         run(connection -> {
+            int sheetIndex = 0;
             for (Entry<String, List<List<Object>>> entry : sheets.entrySet()) {
                 String sheetName = entry.getKey();
                 List<List<Object>> rows = entry.getValue();
-                handleOne(connection, sheetName, rows);
+                List<String> header = mapToList(rows.get(0), Objects::toString);
+                rows = rows.subList(1, rows.size());
+
+                // mapping sheet
+                String mappingSheetName = getOrNull(sheetNames, sheetIndex);
+                if (ObjectUtil.isNotEmpty(mappingSheetName) && !"*".equals(mappingSheetName)) {
+                    sheetName = mappingSheetName;
+                }
+                // mapping header
+                List<String> list = getOrNull(sheetColumnNameList, sheetIndex);
+                if (list != null) {
+                    List<String> mappingHeader = new ArrayList<>(header.size());
+                    for (int i = 0; i < header.size(); i++) {
+                        String h = firstNotNull(getOrNull(list, i), header.get(i));
+                        if (ObjectUtil.isEmpty(h) || "*".equals(h)) h = header.get(i);
+                        mappingHeader.add(h);
+                    }
+                    header = mappingHeader;
+                }
+
+                List<TypeInfo> typeInfos = getTypeInfos(connection, sheetName, header, rows);
+                List<String> sqlList = genSqlList(sheetName, rows, typeInfos);
+                output(sqlList, connection);
+                sheetIndex++;
             }
         });
-    }
-
-    private void handleOne(Connection connection, String sheetName, List<List<Object>> rows) throws Exception {
-        List<String> header = CollectionUtil.mapToList(rows.get(0), Objects::toString);
-        rows = rows.subList(1, rows.size());
-
-        List<TypeInfo> typeInfos = getTypeInfos(connection, sheetName, header, rows);
-        List<String> sqlList = genSqlList(sheetName, rows, typeInfos);
-        output(sqlList, connection);
     }
 
     public List<String> genSqlList(String tableName, List<List<Object>> rows, List<TypeInfo> typeInfos) {
@@ -159,7 +195,10 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
 
     private String getOneValue(Object value, String type) {
         String literal = gen.formatAsLiteral(value);
-        return gen.convertLiteral(literal, type);
+        String convertedLiteral = gen.convertLiteral(literal, type);
+        if (!Objects.equals(convertedLiteral, literal)) return convertedLiteral;
+        if (castAs) return String.format("cast(%s as %s)", literal, type);
+        return literal;
     }
 
     private List<TypeInfo> getTypeInfos(Connection connection, String tableName,

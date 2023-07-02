@@ -120,6 +120,16 @@ public class TypeTableHandler extends BaseDdlOutputHandler implements ArgParserE
         }
     }
 
+    @Override
+    protected String getDefaultColumnName() {
+        return "c_$name";
+    }
+
+    @Override
+    protected String getDefaultPartitionColumnName() {
+        return "p_$name";
+    }
+
     public List<String> genSqlList() {
         Pair<List<String>, List<String>> pair = genSql();
         return CollectionUtil.concatToList(pair.first(), pair.second());

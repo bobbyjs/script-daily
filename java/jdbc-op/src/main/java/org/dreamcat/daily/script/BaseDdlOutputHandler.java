@@ -25,9 +25,9 @@ import org.dreamcat.daily.script.model.TypeInfo;
 public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
 
     @ArgParserField("cn")
-    String columnName = "c_$type";
+    String columnName;
     @ArgParserField("pcn")
-    String partitionColumnName = "p_$type";
+    String partitionColumnName;
     boolean columnQuota;
     // comment on column, or c int comment
     // default use mysql column comment style
@@ -48,6 +48,12 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
     @Override
     protected void afterPropertySet() throws Exception {
         super.afterPropertySet();
+        if (ObjectUtil.isBlank(columnName)) {
+            columnName = getDefaultColumnName();
+        }
+        if (ObjectUtil.isBlank(partitionColumnName)) {
+            partitionColumnName = getDefaultPartitionColumnName();
+        }
 
         if (Arrays.asList("pg", "postgres", "postgresql").contains(dataSourceType)) {
             if (StringUtil.isNotBlank(columnCommentSql) && !columnCommentSql.trim().startsWith("comment on column")) {
@@ -58,7 +64,15 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
         }
     }
 
-    protected String formatColumnName(String columnName) {
+    protected String getDefaultColumnName() {
+        return "$name";
+    }
+
+    protected String getDefaultPartitionColumnName() {
+        return "$name";
+    }
+
+    public String formatColumnName(String columnName) {
         if (!columnQuota) return columnName;
         return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
     }

@@ -46,9 +46,11 @@ class ImportTypeExcelHandlerTest {
         }
         new SubcommandArgParser(App.class).run(
                 "import-table-excel",
-                "-b", "3", "--create-table",
+                "-b", "3", "--create-table", "--cast-as",
                 "-f", filename.getAbsolutePath(),
-                "-T", ClassPathUtil.getResourceAsString("mysql-text-types.txt"));
+                "-T", ClassPathUtil.getResourceAsString("mysql-text-types.txt"),
+                "--sn", "t_table_1", "t_table_2",
+                "--scn", "*", "c_int,c_double,c_string,c_bool,c_date,c_local_date,c_local_date_time,c_null");
     }
 
     // create a excel file
@@ -90,7 +92,7 @@ class ImportTypeExcelHandlerTest {
         @XlsHeader(header = "Cell Date", style = @XlsStyle(
                 fgColor = 6, dataFormat = "yyyy-MM-dd hh:mm:ss"))
         Date e = new Date(System.currentTimeMillis() + randi(-3 * 24 * 3600L, 3 * 24 * 3600L));
-        @XlsHeader(header = "Cell LocalTime", style = @XlsStyle(
+        @XlsHeader(header = "Cell LocalDate", style = @XlsStyle(
                 fgColor = 7, dataFormat = "yyyy-MM-dd"))
         LocalDate f = ofDate(
                 new Date(System.currentTimeMillis() + randi(-3 * 24 * 3600L, 3 * 24 * 3600L))).toLocalDate();

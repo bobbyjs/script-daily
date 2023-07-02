@@ -83,8 +83,7 @@ public class TypeInfo {
     public String computeColumnName(String columnNameTemplate, Map<String, MutableInt> columnNameCounter) {
         int index = columnNameCounter.computeIfAbsent(columnName, k -> new MutableInt(0)).incrAndGet();
         return InterpolationUtil.format(columnNameTemplate,
-                "t", columnName, "type", columnName,
-                "i", index + "", "index", index + "");
+                "name", columnName, "i", index + "", "index", index + "");
     }
 
     public static Pair<List<String>, List<String>> getTypes(
