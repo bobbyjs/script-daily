@@ -57,6 +57,7 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
     private boolean createTable;
     @ArgParserField({"b"})
     int batchSize = 1;
+    @ArgParserField("A")
     boolean castAs;
 
     @ArgParserField("t")
