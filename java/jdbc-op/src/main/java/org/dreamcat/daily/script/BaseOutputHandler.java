@@ -18,7 +18,7 @@ import org.dreamcat.common.util.ObjectUtil;
  */
 @Setter
 @Accessors(fluent = true)
-public class BaseOutputHandler extends BaseHandler {
+public abstract class BaseOutputHandler extends BaseHandler {
 
     boolean compact;
 

@@ -90,31 +90,31 @@ public class ImportTypeHandler extends BaseDdlOutputHandler implements ArgParser
     }
 
     private void runForExcel() throws Exception {
-        ImportTypeExcelHandler handler = (ImportTypeExcelHandler) new ImportTypeExcelHandler()
-                .createTable(createTable)
-                .batchSize(batchSize)
-                .emptyStringAsNull(emptyStringAsNull)
-                .textTypeFile(textTypeFile)
-                .textTypeFileContent(textTypeFileContent)
-                .columnName(columnName)
-                .columnQuota(columnQuota)
-                .doubleQuota(doubleQuota)
-                .commentAlone(commentAlone)
-                .columnCommentSql(columnCommentSql)
-                .tableSuffixSql(tableSuffixSql)
-                .extraColumnSql(extraColumnSql)
-                .setEnumValues(setEnumValues)
-                .compact(compact)
-                .rollingFile(rollingFile)
-                .rollingFileMaxSqlCount(rollingFileMaxSqlCount)
-                .dataSourceType(dataSourceType)
-                .converterFile(converterFile)
-                .converters(converters)
-                .nullRatio(nullRatio)
-                .enableNeg(enableNeg)
-                .yes(yes)
-                .debug(debug);
-        handler.run();
+        // ImportTypeExcelHandler handler = (ImportTypeExcelHandler) new ImportTypeExcelHandler()
+        //         .createTable(createTable)
+        //         .batchSize(batchSize)
+        //         .emptyStringAsNull(emptyStringAsNull)
+        //         .textTypeFile(textTypeFile)
+        //         .textTypeFileContent(textTypeFileContent)
+        //         .columnName(columnName)
+        //         .columnQuota(columnQuota)
+        //         .doubleQuota(doubleQuota)
+        //         .commentAlone(commentAlone)
+        //         .columnCommentSql(columnCommentSql)
+        //         .tableSuffixSql(tableSuffixSql)
+        //         .extraColumnSql(extraColumnSql)
+        //         .setEnumValues(setEnumValues)
+        //         .compact(compact)
+        //         .rollingFile(rollingFile)
+        //         .rollingFileMaxSqlCount(rollingFileMaxSqlCount)
+        //         .dataSourceType(dataSourceType)
+        //         .converterFile(converterFile)
+        //         .converters(converters)
+        //         .nullRatio(nullRatio)
+        //         .enableNeg(enableNeg)
+        //         .yes(yes)
+        //         .debug(debug);
+        // handler.run();
     }
 
 }

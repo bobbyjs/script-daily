@@ -132,7 +132,7 @@ public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgPar
         run(connection -> this.handle(connection, rows));
     }
 
-    private void handle(Connection connection, List<List<String>> rows) throws Exception {
+    protected void handle(Connection connection, List<List<String>> rows) throws Exception {
         List<String> header = rows.get(0);
         rows = rows.subList(1, rows.size());
 

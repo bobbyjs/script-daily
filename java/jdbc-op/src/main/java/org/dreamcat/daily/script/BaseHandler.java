@@ -35,7 +35,7 @@ import org.dreamcat.daily.script.model.ConverterInfo;
  */
 @Setter
 @Accessors(fluent = true)
-public class BaseHandler {
+public abstract class BaseHandler {
 
     @ArgParserField(value = {"j"})
     String jdbcUrl;

@@ -22,7 +22,7 @@ import org.dreamcat.daily.script.model.TypeInfo;
  */
 @Setter
 @Accessors(fluent = true)
-public class BaseDdlOutputHandler extends BaseOutputHandler {
+public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
 
     @ArgParserField("cn")
     String columnName = "c_$type";

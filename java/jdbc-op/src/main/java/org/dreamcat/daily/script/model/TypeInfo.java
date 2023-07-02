@@ -30,7 +30,7 @@ import org.dreamcat.common.util.ObjectUtil;
 @AllArgsConstructor
 public class TypeInfo {
 
-    private String columnName; // sql column, no prefix c_ or p
+    private String columnName; // sql column
     private String typeName; // sql type
     private String typeId; // generator
 
