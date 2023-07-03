@@ -65,11 +65,12 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
     @ArgParserField("T")
     private String textTypeFileContent;
     @ArgParserField("sn")
-    private List<String> sheetNames; // mapping to table name
+    private String sheetNames; // mapping to table name
     @ArgParserField("scn")
     private List<String> sheetColumnNames; // comma sep
 
     transient EnumMap<TextValueType, List<String>> textTypeMap;
+    transient List<String> sheetNameList = Collections.emptyList();
     transient List<List<String>> sheetColumnNameList = Collections.emptyList();
 
     @SneakyThrows
@@ -101,8 +102,11 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
             }
         }
         if (ObjectUtil.isNotEmpty(sheetColumnNames)) {
-            sheetColumnNameList = mapToList(sheetColumnNames, it -> ArrayUtil.mapToList(
-                    it.split(","), String::trim));
+            sheetColumnNameList = mapToList(sheetColumnNames,
+                    it -> ArrayUtil.mapToList(it.split(","), String::trim));
+        }
+        if (ObjectUtil.isNotEmpty(sheetNames)) {
+            sheetNameList = ArrayUtil.mapToList(sheetNames.split(","), String::trim);
         }
         run();
     }
@@ -124,7 +128,7 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
                 rows = rows.subList(1, rows.size());
 
                 // mapping sheet
-                String mappingSheetName = getOrNull(sheetNames, sheetIndex);
+                String mappingSheetName = getOrNull(sheetNameList, sheetIndex);
                 if (ObjectUtil.isNotEmpty(mappingSheetName) && !"*".equals(mappingSheetName)) {
                     sheetName = mappingSheetName;
                 }

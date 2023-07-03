@@ -49,7 +49,7 @@ class ImportTypeExcelHandlerTest {
                 "-b", "3", "--create-table", "--cast-as",
                 "-f", filename.getAbsolutePath(),
                 "-T", ClassPathUtil.getResourceAsString("mysql-text-types.txt"),
-                "--sn", "t_table_1", "t_table_2",
+                "--sn", "t_table_1,t_table_2",
                 "--scn", "*", "c_int,c_double,c_string,c_bool,c_date,c_local_date,c_local_date_time,c_null");
     }
 
