@@ -63,11 +63,11 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
     @ArgParserField("t")
     private String textTypeFile;
     @ArgParserField("T")
-    private String textTypeFileContent;
+    private String textTypeFileContent; // line sep by \n or ;, and field sep by |
     @ArgParserField("sn")
     private String sheetNames; // mapping to table name
     @ArgParserField("scn")
-    private List<String> sheetColumnNames; // comma sep
+    private List<String> sheetColumnNames; // sep by ,
 
     transient EnumMap<TextValueType, List<String>> textTypeMap;
     transient List<String> sheetNameList = Collections.emptyList();
@@ -160,8 +160,8 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
     public Pair<List<String>, List<String>> genSql(String tableName, List<List<Object>> rows,
             List<TypeInfo> typeInfos) {
         // create
-        Triple<List<String>, List<String>, List<String>> triple = genCreateTableSql(tableName, typeInfos,
-                Collections.emptyList());
+        Triple<List<String>, List<String>, List<String>> triple = genCreateTableSql(
+                tableName, typeInfos, Collections.emptyList());
         List<String> ddlList = triple.first();
         List<String> columnNames = triple.second();
 
@@ -176,7 +176,9 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
         int pageNum = 1;
         List<List<Object>> list;
         while (!(list = ListUtil.subList(rows, pageNum++, batchSize)).isEmpty()) {
-            insertList.add(String.format(insertIntoSql, getValues(list, typeInfos)));
+            String valueSql = getValues(list, typeInfos);
+            if (valueSql == null) continue;
+            insertList.add(String.format(insertIntoSql, valueSql));
         }
 
         return Pair.of(ddlList, insertList);
@@ -187,15 +189,20 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
         int count = typeInfos.size();
         List<String> valueSqlList = new ArrayList<>();
         for (List<Object> row : rows) {
+            if (row == null) {
+                System.err.println("found a null row");
+                continue;
+            }
             List<String> value = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                Object cell = row.get(i);
+                Object cell = getOrNull(row, i);
                 String literal = getOneValue(cell, typeInfos.get(i).getTypeId());
                 value.add(literal);
             }
             valueSqlList.add("(" + String.join(",", value) + ")");
         }
-        return String.join(",", valueSqlList);
+        if (valueSqlList.isEmpty()) return null;
+        else return String.join(",", valueSqlList);
     }
 
     private String getOneValue(Object value, String type) {
@@ -257,7 +264,7 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
         if (ObjectUtil.isNotEmpty(textTypeFile)) {
             lines = FileUtil.readAsList(textTypeFile);
         } else {
-            lines = Arrays.asList(textTypeFileContent.split("\n"));
+            lines = Arrays.asList(textTypeFileContent.replace('\n', ';').split(";"));
         }
         return lines.stream()
                 .map(String::trim).filter(ObjectUtil::isNotBlank)
@@ -279,7 +286,7 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
                         System.err.println("invalid format line in your text-type-file: " + line);
                         System.exit(1);
                     }
-                    List<String> types = Arrays.stream(pair[1].trim().split(",")).map(String::trim)
+                    List<String> types = Arrays.stream(pair[1].trim().split("\\|")).map(String::trim)
                             .collect(Collectors.toList());
                     return Pair.of(textValueType, types);
                 }).collect(Collectors.toMap(Pair::getKey, Pair::getValue,

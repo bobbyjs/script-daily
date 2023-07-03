@@ -66,7 +66,9 @@ public class TypeInfo {
             System.err.println("invalid type: " + type);
             System.exit(1);
         }
-        this.typeId = type.toLowerCase().replace("%d", "")
+        this.typeId = typeName.toLowerCase()
+                .replaceAll("\\(\\d+\\)", "")
+                .replaceAll("\\(\\d+, *\\d+\\)", "")
                 .replace("(", "")
                 .replace(")", "")
                 .replaceAll(",[ ]*", "");
