@@ -54,7 +54,7 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
     @ArgParserField("f")
     private String file;
     @ArgParserField("L")
-    private boolean createTable;
+    private boolean detectFromJdbc;
     @ArgParserField({"b"})
     int batchSize = 1;
     @ArgParserField("A")
@@ -84,7 +84,7 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
             System.err.println("required arg: -f|--file <file>");
             System.exit(1);
         }
-        if (createTable) {
+        if (!detectFromJdbc) {
             if (ObjectUtil.isEmpty(textTypeFile) && ObjectUtil.isBlank(textTypeFileContent)) {
                 System.err.println("require args: -t|--text-type-file <file> or -T|--text-type-file-content <content> since --create-table is pass");
                 System.exit(1);
@@ -215,11 +215,7 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
 
     private List<TypeInfo> getTypeInfos(Connection connection, String tableName,
             List<String> header, List<List<Object>> rows) throws SQLException {
-        if (createTable) {
-            List<String> types = getTypesByData(rows, header);
-            return types.stream().map(type -> new TypeInfo(type, setEnumValues))
-                    .collect(Collectors.toList());
-        } else {
+        if (detectFromJdbc) {
             Pair<List<String>, List<String>> pair = TypeInfo.getTypes(connection, tableName);
             List<TypeInfo> typeInfos = pair.first().stream()
                     .map(type -> new TypeInfo(type, setEnumValues))
@@ -232,11 +228,15 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
                 }
             }
             return typeInfos;
+        } else {
+            List<String> types = getTypesFromData(rows, header);
+            return types.stream().map(type -> new TypeInfo(type, setEnumValues))
+                    .collect(Collectors.toList());
         }
     }
 
     // data detect
-    private List<String> getTypesByData(List<List<Object>> rows, List<String> header) {
+    private List<String> getTypesFromData(List<List<Object>> rows, List<String> header) {
         int headerWidth = header.size();
         List<String> types = IntStream.range(0, headerWidth).mapToObj(i -> (String) null)
                 .collect(Collectors.toList());

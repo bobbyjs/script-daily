@@ -46,7 +46,7 @@ class ImportTypeExcelHandlerTest {
         }
         new SubcommandArgParser(App.class).run(
                 "import-table-excel",
-                "-b", "3", "--create-table", "--cast-as",
+                "-b", "3", "--cast-as",
                 "-f", filename.getAbsolutePath(),
                 "-T", ClassPathUtil.getResourceAsString("mysql-text-types.txt"),
                 "--sn", "t_table_1,t_table_2",
