@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
  * @author Jerry Will
  * @version 2023-04-01
  */
-class TypedTableHandlerTest {
+class TypeTableHandlerTest {
 
     @Test
     void testPostgres() throws Exception {
