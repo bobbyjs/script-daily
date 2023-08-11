@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.jar.JarFile;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.dreamcat.common.argparse.ArgParserField;
@@ -130,7 +131,10 @@ public abstract class BaseHandler {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void run(IConsumer<Connection, ?> f) throws Exception {
         if (yes || jdbcUrl != null) {
-            validateJdbc();
+            // validate args
+            CliUtil.checkParameter(jdbcUrl, "jdbcUrl", "-j|--jdbc-url");
+            CliUtil.checkParameter(driverPath, "driverPath", "--dp|--driver-path");
+            CliUtil.checkParameter(driverClass, "driverClass", "--dc|--driver-class");
         }
         // jdbcUrl == null only if yes is false
         if (jdbcUrl == null) {
@@ -160,10 +164,4 @@ public abstract class BaseHandler {
         }
     }
 
-    protected void validateJdbc() {
-        // validate args
-        CliUtil.checkParameter(jdbcUrl, "jdbcUrl", "-j|--jdbc-url");
-        CliUtil.checkParameter(driverPath, "driverPath", "--dp|--driver-path");
-        CliUtil.checkParameter(driverClass, "driverClass", "--dc|--driver-class");
-    }
 }

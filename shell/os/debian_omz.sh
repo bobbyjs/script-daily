@@ -8,6 +8,8 @@ apt-get install zsh git curl wget file -y
 # git clone https://ghproxy.com/https://github.com
 sh -c "$(curl -fsSL https://raw.gitmirror.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sed 's/github/kgithub/g')"
 
+sed -i '/source \$ZSH\/oh-my-zsh.sh/i DISABLE_AUTO_UPDATE="true"' ~/.zshrc
+
 # themes
 cp ~/.oh-my-zsh/themes/agnoster.zsh-theme ~/.oh-my-zsh/custom/themes/myagnoster.zsh-theme
 sed -i 's/blue/cyan/' ~/.oh-my-zsh/custom/themes/myagnoster.zsh-theme
