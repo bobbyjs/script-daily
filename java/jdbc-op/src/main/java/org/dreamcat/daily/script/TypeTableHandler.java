@@ -138,7 +138,6 @@ public class TypeTableHandler extends BaseDdlOutputHandler implements ArgParserE
     // generate ddl & dml
     public Pair<List<String>, List<String>> genSql() {
         // generate
-
         Triple<List<String>, List<String>, List<String>> triple = genCreateTableSql(tableName,
                 CollectionUtil.mapToList(types,
                         type -> new TypeInfo(type, setEnumValues)),

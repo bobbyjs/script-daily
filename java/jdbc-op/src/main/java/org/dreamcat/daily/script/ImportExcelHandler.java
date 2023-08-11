@@ -48,8 +48,8 @@ import org.dreamcat.daily.script.model.TypeInfo;
  */
 @Setter
 @Accessors(fluent = true)
-@ArgParserType(allProperties = true, command = "import-table-excel")
-public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgParserEntrypoint {
+@ArgParserType(allProperties = true, command = "import-excel")
+public class ImportExcelHandler extends BaseDdlOutputHandler implements ArgParserEntrypoint {
 
     @ArgParserField("f")
     private String file;
@@ -66,12 +66,12 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
     private String textTypeFileContent; // line sep by \n or ;, and field sep by |
     @ArgParserField("sn")
     private String sheetNames; // mapping to table name
-    @ArgParserField("scn")
-    private List<String> sheetColumnNames; // sep by ,
+    @ArgParserField("cn")
+    private List<String> columnNames; // sep by ,
 
     transient EnumMap<TextValueType, List<String>> textTypeMap;
     transient List<String> sheetNameList = Collections.emptyList();
-    transient List<List<String>> sheetColumnNameList = Collections.emptyList();
+    transient List<List<String>> columnNameList = Collections.emptyList();
 
     @SneakyThrows
     @Override
@@ -101,8 +101,8 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
                 System.exit(1);
             }
         }
-        if (ObjectUtil.isNotEmpty(sheetColumnNames)) {
-            sheetColumnNameList = mapToList(sheetColumnNames,
+        if (ObjectUtil.isNotEmpty(columnNames)) {
+            columnNameList = mapToList(columnNames,
                     it -> ArrayUtil.mapToList(it.split(","), String::trim));
         }
         if (ObjectUtil.isNotEmpty(sheetNames)) {
@@ -133,7 +133,7 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
                     sheetName = mappingSheetName;
                 }
                 // mapping header
-                List<String> list = getOrNull(sheetColumnNameList, sheetIndex);
+                List<String> list = getOrNull(columnNameList, sheetIndex);
                 if (list != null) {
                     List<String> mappingHeader = new ArrayList<>(header.size());
                     for (int i = 0; i < header.size(); i++) {
@@ -223,7 +223,7 @@ public class ImportTypeExcelHandler extends BaseDdlOutputHandler implements ArgP
             Set<String> headerSet = new HashSet<>(header);
             for (TypeInfo typeInfo : typeInfos) {
                 if (!headerSet.contains(typeInfo.getColumnName())) {
-                    System.err.println("column `" + columnName + "` doesn't exist in table " + tableName);
+                    System.err.println("column `" + columnNameTemplate + "` doesn't exist in table " + tableName);
                     System.exit(1);
                 }
             }

@@ -91,3 +91,28 @@ subcommands:
       ignoreError: 执行SQL失败之后是否忽略错误继续
       outputFile: 文件名，保存SQL至文件
       outputFileSqlMaxCount: "分文件保存，每个文件的最大SQL数\n${ls}outputFile取a.sql，则生成a1.sql, a2.sql ..."
+
+  import-csv:
+    commandDesc: 将csv数据导入到数据表中
+    header: "jdbc-op import-type-csv 将csv数据导入到数据表中"
+    helpDesc:
+      tableName: 数据表名，例如：my_table, my_db.my_table
+      createTable: 是否创建表
+      tsv: 使用tsv格式解析而非csv
+      file: 数据文件的路径
+      fileContent: 导入文件的内容，与-f互斥，，优先取-f的值
+      textTypeFile: 类型映射文件的路径
+      textTypeFileContent: 类型映射文件的文件内容，与-t互斥，，优先取-t的值
+      emptyStringAsNull: 视空字符串为null
+
+  import-excel:
+    commandDesc: 将excel数据导入到多张数据表中
+    header: "jdbc-op import-type-excel 将excel数据导入到多张数据表中"
+    helpDesc:
+      file: 数据文件的路径
+      textTypeFile: 类型映射文件的路径
+      textTypeFileContent: 类型映射文件的文件内容，与-t互斥，，优先取-t的值
+      sheetNames: sheet名的映射规则
+      columnNames: "列名的映射规则，支持多值，每个值对应一个sheet\n${ls}例子：--cn '*' 'c_int,c_string,c_date'"
+      castAs: "在insert into中使用cast(x as y)类型转换函数"
+      detectFromJdbc: 是否从现存的数据表中探查类型

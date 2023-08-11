@@ -43,8 +43,8 @@ import org.dreamcat.daily.script.model.TypeInfo;
  */
 @Setter
 @Accessors(fluent = true)
-@ArgParserType(allProperties = true, command = "import-table-csv")
-public class ImportTypeCsvHandler extends BaseDdlOutputHandler implements ArgParserEntrypoint {
+@ArgParserType(allProperties = true, command = "import-csv")
+public class ImportCsvHandler extends BaseDdlOutputHandler implements ArgParserEntrypoint {
 
     // partition is unsupported
     @ArgParserField("f")

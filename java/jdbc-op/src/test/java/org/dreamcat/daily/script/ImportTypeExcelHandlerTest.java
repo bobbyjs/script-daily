@@ -45,12 +45,12 @@ class ImportTypeExcelHandlerTest {
             return;
         }
         new SubcommandArgParser(App.class).run(
-                "import-table-excel",
+                "import-excel",
                 "-b", "3", "--cast-as",
                 "-f", filename.getAbsolutePath(),
                 "-T", ClassPathUtil.getResourceAsString("mysql-text-types.txt"),
                 "--sn", "t_table_1,t_table_2",
-                "--scn", "*", "c_int,c_double,c_string,c_bool,c_date,c_local_date,c_local_date_time,c_null");
+                "--cn", "*", "c_int,c_double,c_string,c_bool,c_date,c_local_date,c_local_date_time,c_null");
     }
 
     // create a excel file

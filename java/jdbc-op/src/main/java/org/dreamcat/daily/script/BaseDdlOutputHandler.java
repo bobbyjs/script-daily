@@ -24,10 +24,10 @@ import org.dreamcat.daily.script.model.TypeInfo;
 @Accessors(fluent = true)
 public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
 
-    @ArgParserField("cn")
-    String columnName;
-    @ArgParserField("pcn")
-    String partitionColumnName;
+    @ArgParserField("cnt")
+    String columnNameTemplate;
+    @ArgParserField("pcnt")
+    String partitionColumnNameTemplate;
     boolean columnQuota;
     // comment on column, or c int comment
     // default use mysql column comment style
@@ -48,11 +48,11 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
     @Override
     protected void afterPropertySet() throws Exception {
         super.afterPropertySet();
-        if (ObjectUtil.isBlank(columnName)) {
-            columnName = getDefaultColumnName();
+        if (ObjectUtil.isBlank(columnNameTemplate)) {
+            columnNameTemplate = getDefaultColumnName();
         }
-        if (ObjectUtil.isBlank(partitionColumnName)) {
-            partitionColumnName = getDefaultPartitionColumnName();
+        if (ObjectUtil.isBlank(partitionColumnNameTemplate)) {
+            partitionColumnNameTemplate = getDefaultPartitionColumnName();
         }
 
         if (Arrays.asList("pg", "postgres", "postgresql").contains(dataSourceType)) {
@@ -78,7 +78,8 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
     }
 
     // return createTableSql, columnNames, partitionColumnNames
-    public Triple<List<String>, List<String>, List<String>> genCreateTableSql(String tableName, List<TypeInfo> typeInfos,
+    public Triple<List<String>, List<String>, List<String>> genCreateTableSql(
+            String tableName, List<TypeInfo> typeInfos,
             List<TypeInfo> partitionTypeInfos) {
         List<String> ddlList = new ArrayList<>();
 
@@ -139,7 +140,7 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
     private String getColumnDefSqlAndFillComment(TypeInfo typeInfo, String tableName,
             List<String> columnNames, List<String> columnCommentSqlList,
             Map<String, MutableInt> counter) {
-        String col = typeInfo.computeColumnName(columnName, counter);
+        String col = typeInfo.computeColumnName(columnNameTemplate, counter);
         columnNames.add(col);
 
         String columnDefSql = formatColumnName(col) + " " + typeInfo.getTypeName();
