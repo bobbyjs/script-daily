@@ -71,7 +71,7 @@ class TypeTableHandlerTest {
         List<String> args = Arrays.asList("type-table", "test.my_table", "--column-quota", "--debug",
                 "--extra-column-sql", "id bigint(20) not null auto_increment primary key",
                 "-c", "Column Type: $type",
-                "--cn", "${type}_col_$index", "--pcn", "p_${type}_col_$index",
+                "--cnt", "${name}_col_$index", "--pcnt", "p_${name}_col_$index",
                 "-F", ClassPathUtil.getResourceAsString("presto-mapping-types.txt"));
         SubcommandArgParser argParser = new SubcommandArgParser(App.class);
         argParser.run(args);

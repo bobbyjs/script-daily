@@ -85,7 +85,8 @@ public class TypeInfo {
     public String computeColumnName(String columnNameTemplate, Map<String, MutableInt> columnNameCounter) {
         int index = columnNameCounter.computeIfAbsent(columnName, k -> new MutableInt(0)).incrAndGet();
         return InterpolationUtil.format(columnNameTemplate,
-                "name", columnName, "i", index + "", "index", index + "");
+                "name", columnName, "type", typeName,
+                "i", index + "", "index", index + "");
     }
 
     public static Pair<List<String>, List<String>> getTypes(
@@ -104,7 +105,7 @@ public class TypeInfo {
             s = ss[0];
             t = ss[1];
         }
-        List<JdbcColumnDef> columns = JdbcUtil.getTableSchema(connection, s, t);
+        List<JdbcColumnDef> columns = JdbcUtil.getColumns(connection, s, t);
         columns = columns.stream().filter(column -> !ignoredColumns.contains(column.getName()))
                 .collect(Collectors.toList());
 

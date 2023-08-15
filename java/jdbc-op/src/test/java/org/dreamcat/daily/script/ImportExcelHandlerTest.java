@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
  * @author Jerry Will
  * @version 2023-06-30
  */
-class ImportTypeExcelHandlerTest {
+class ImportExcelHandlerTest {
 
     static String homeDir = SystemUtil.getEnvOrProperty("HOME", "user.dir", ".");
     static File filename = new File(homeDir, "Downloads/all_type.xlsx");
@@ -50,7 +50,7 @@ class ImportTypeExcelHandlerTest {
                 "-f", filename.getAbsolutePath(),
                 "-T", ClassPathUtil.getResourceAsString("mysql-text-types.txt"),
                 "--sn", "t_table_1,t_table_2",
-                "--cn", "*", "c_int,c_double,c_string,c_bool,c_date,c_local_date,c_local_date_time,c_null");
+                "--cn", "c_int,c_double,c_string,c_bool,c_date,c_local_date,c_local_date_time,c_null", "*");
     }
 
     // create a excel file

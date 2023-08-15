@@ -1,5 +1,7 @@
 package org.dreamcat.daily.script;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,6 +17,9 @@ import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
 import org.dreamcat.daily.script.model.TypeInfo;
+import org.dreamcat.daily.script.module.JdbcModule;
+import org.dreamcat.daily.script.module.OutputModule;
+import org.dreamcat.daily.script.module.RandomGenModule;
 
 /**
  * @author Jerry Will
@@ -22,7 +27,7 @@ import org.dreamcat.daily.script.model.TypeInfo;
  */
 @Setter
 @Accessors(fluent = true)
-public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
+public abstract class BaseDdlHandler {
 
     @ArgParserField("cnt")
     String columnNameTemplate;
@@ -41,13 +46,24 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
     String extraColumnSql;
     boolean doubleQuota; // "c1" or `c2`
     String setEnumValues = "a,b,c,d";
+    @ArgParserField(value = {"y"})
+    boolean yes; // execute sql or not actually
+    boolean debug;
+    @ArgParserField(firstChar = true)
+    boolean help;
+
+    @ArgParserField(nested = true)
+    JdbcModule jdbc;
+    @ArgParserField(nested = true)
+    OutputModule output;
+    @ArgParserField(nested = true)
+    RandomGenModule randomGen;
 
     transient Map<String, MutableInt> columnNameCounter = new HashMap<>();
     transient Map<String, MutableInt> partitionColumnNameCounter = new HashMap<>();
 
-    @Override
     protected void afterPropertySet() throws Exception {
-        super.afterPropertySet();
+        randomGen.afterPropertySet();
         if (ObjectUtil.isBlank(columnNameTemplate)) {
             columnNameTemplate = getDefaultColumnName();
         }
@@ -55,7 +71,7 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
             partitionColumnNameTemplate = getDefaultPartitionColumnName();
         }
 
-        if (Arrays.asList("pg", "postgres", "postgresql").contains(dataSourceType)) {
+        if (Arrays.asList("pg", "postgres", "postgresql").contains(randomGen.dataSourceType)) {
             if (StringUtil.isNotBlank(columnCommentSql) && !columnCommentSql.trim().startsWith("comment on column")) {
                 columnCommentSql = String.format("comment on column $table.$column is '%s'", columnCommentSql);
                 commentAlone = true; // since use postgres style
@@ -65,11 +81,11 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
     }
 
     protected String getDefaultColumnName() {
-        return "$name";
+        return "c_$name";
     }
 
     protected String getDefaultPartitionColumnName() {
-        return "$name";
+        return "p_$name";
     }
 
     public String formatColumnName(String columnName) {
@@ -83,7 +99,7 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
             List<TypeInfo> partitionTypeInfos) {
         List<String> ddlList = new ArrayList<>();
 
-        String sep = compact ? " " : "\n";
+        String sep = output.compact ? " " : "\n";
         StringBuilder createTableSql = new StringBuilder();
         createTableSql.append("create table ").append(tableName).append(" (").append(sep);
         if (StringUtil.isNotBlank(extraColumnSql)) {
@@ -98,7 +114,7 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
         List<String> columnNames = new ArrayList<>(columnCount);
         for (TypeInfo typeInfo : typeInfos) {
             String columnDefSql = getColumnDefSqlAndFillComment(
-                    typeInfo, tableName,
+                    typeInfo, tableName, columnNameTemplate,
                     columnNames, columnCommentSqlList, columnNameCounter);
             columnDefSqlList.add(columnDefSql);
         }
@@ -112,7 +128,7 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
         List<String> partitionColumnNames = new ArrayList<>(partitionColumnCount);
         for (TypeInfo partitionTypeInfo : partitionTypeInfos) {
             String partitionColumnDefSql = getColumnDefSqlAndFillComment(
-                    partitionTypeInfo, tableName,
+                    partitionTypeInfo, tableName, partitionColumnNameTemplate,
                     partitionColumnNames, columnCommentSqlList, partitionColumnNameCounter);
             partitionColumnDefSqlList.add(partitionColumnDefSql);
         }
@@ -137,14 +153,15 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
         return Triple.of(ddlList, columnNames, partitionColumnNames);
     }
 
-    private String getColumnDefSqlAndFillComment(TypeInfo typeInfo, String tableName,
+    private String getColumnDefSqlAndFillComment(
+            TypeInfo typeInfo, String tableName, String columnTemplate,
             List<String> columnNames, List<String> columnCommentSqlList,
             Map<String, MutableInt> counter) {
-        String col = typeInfo.computeColumnName(columnNameTemplate, counter);
+        String col = typeInfo.computeColumnName(columnTemplate, counter);
         columnNames.add(col);
 
         String columnDefSql = formatColumnName(col) + " " + typeInfo.getTypeName();
-        if (!compact) columnDefSql = "    " + columnDefSql;
+        if (!output.compact) columnDefSql = "    " + columnDefSql;
 
         if (StringUtil.isNotBlank(columnCommentSql)) {
             Map<String, Object> ctx = MapUtil.of(
@@ -159,5 +176,19 @@ public abstract class BaseDdlOutputHandler extends BaseOutputHandler {
             }
         }
         return columnDefSql;
+    }
+
+    public void output(List<String> sqlList, Connection connection) throws Exception {
+        if (!yes) {
+            output.run(sqlList);
+            return;
+        }
+
+        try (Statement statement = connection.createStatement()) {
+            output.run(sqlList);
+            for (String sql : sqlList) {
+                statement.execute(sql);
+            }
+        }
     }
 }

@@ -31,7 +31,10 @@ import org.dreamcat.daily.script.model.TypeInfo;
 @Setter
 @Accessors(fluent = true)
 @ArgParserType(allProperties = true, command = "type-table")
-public class TypeTableHandler extends BaseDdlOutputHandler implements ArgParserEntrypoint {
+public class TypeTableHandler extends BaseDdlHandler implements ArgParserEntrypoint {
+
+    @ArgParserField(position = 1)
+    private String tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
 
     // one type per line: varchar(%d), decimal(%d, %d)
     @ArgParserField("f")
@@ -42,16 +45,10 @@ public class TypeTableHandler extends BaseDdlOutputHandler implements ArgParserE
     private List<String> types;
     @ArgParserField("P")
     private List<String> partitionTypes;
-    @ArgParserField(required = true, position = 0)
-    private String tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
-    // like this 'ratio,rows', example: 0.5,10
-    private String rowNullRatio;
     @ArgParserField({"b"})
     int batchSize = 1;
     @ArgParserField({"n"})
     int rowNum = randi(1, 76);
-
-    transient RowNullRatioBasedGen rowNullRatioBasedGen;
 
     @SneakyThrows
     @Override
@@ -91,43 +88,20 @@ public class TypeTableHandler extends BaseDdlOutputHandler implements ArgParserE
         }
 
         this.afterPropertySet();
-        this.reset();
+        randomGen.reset(types.size());
         // debug
         if (debug) {
             Stream.concat(types.stream(), partitionTypes.stream()).distinct().forEach(type -> {
                 type = new TypeInfo(type, setEnumValues).getTypeId();
-                String raw = gen.generateLiteral(type);
+                String raw = randomGen.generateLiteral(type);
                 System.out.println(type + ": " + raw);
             });
         }
-        run(connection -> output(genSqlList(), connection));
+        jdbc.run(connection -> output(genSqlList(), connection));
     }
 
-    @Override
-    protected void afterPropertySet() throws Exception {
-        super.afterPropertySet();
-
-        if (ObjectUtil.isNotBlank(rowNullRatio)) {
-            Pair<Double, Integer> pair = Pair.fromSep(rowNullRatio, ",",
-                    Double::valueOf, Integer::valueOf);
-            if (!pair.isFull()) {
-                throw new IllegalArgumentException(
-                        "invalid smartRowNullRatio: " + rowNullRatio);
-            }
-            double ratio = pair.first();
-            int rows = pair.second();
-            this.rowNullRatioBasedGen = new RowNullRatioBasedGen(ratio, rows);
-        }
-    }
-
-    @Override
-    protected String getDefaultColumnName() {
-        return "c_$name";
-    }
-
-    @Override
-    protected String getDefaultPartitionColumnName() {
-        return "p_$name";
+    public void reset() {
+        randomGen.reset(types.size());
     }
 
     public List<String> genSqlList() {
@@ -174,7 +148,7 @@ public class TypeTableHandler extends BaseDdlOutputHandler implements ArgParserE
     private String getOneValues() {
         return "(" + types.stream().map(type -> {
             type = new TypeInfo(type, setEnumValues).getTypeId();
-            return gen.generateLiteral(type);
+            return randomGen.generateLiteral(type);
         }).collect(Collectors.joining(",")) + ")";
     }
 
@@ -184,57 +158,8 @@ public class TypeTableHandler extends BaseDdlOutputHandler implements ArgParserE
         for (int i = 0, size = partitionTypes.size(); i < size; i++) {
             TypeInfo typeInfo = new TypeInfo(partitionTypes.get(i), setEnumValues);
             String columnName = partitionColumnNames.get(i);
-            list.add(columnName + "=" + gen.generateLiteral(typeInfo.getTypeId()));
+            list.add(columnName + "=" + randomGen.generateLiteral(typeInfo.getTypeId()));
         }
         return String.format(" partition(%s)", String.join(",", list));
-    }
-
-    @Override
-    protected String convert(String literal, String typeName) {
-        literal = super.convert(literal, typeName);
-        if (literal != null) return literal;
-        if (rowNullRatioBasedGen != null && rowNullRatioBasedGen.generate()) {
-            return gen.nullLiteral();
-        }
-        return null;
-    }
-
-    void reset() {
-        if (rowNullRatioBasedGen != null) {
-            rowNullRatioBasedGen.reset(types.size());
-        }
-    }
-
-    static class RowNullRatioBasedGen {
-
-        final int rows;
-        final double ratio;
-        int columns;
-        int total;
-        int offset;
-
-        RowNullRatioBasedGen(double ratio, int rows) {
-            this.ratio = ratio;
-            this.rows = rows;
-        }
-
-        void reset(int columns) {
-            this.columns = columns;
-            this.total = columns * rows;
-            this.offset = 0;
-        }
-
-        boolean generate() {
-            if (total == 0) {
-                throw new IllegalStateException("must call rest once before call generate");
-            }
-            if (offset >= total) {
-                offset = 0;
-            }
-            if (offset++ < columns) {
-                return Math.random() <= ratio;
-            }
-            return false;
-        }
     }
 }

@@ -3,7 +3,6 @@ package org.dreamcat.daily.script;
 import static org.dreamcat.common.util.RandomUtil.randi;
 
 import java.sql.Connection;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,7 +32,10 @@ import org.dreamcat.common.util.StringUtil;
  * @version 2023-06-06
  */
 @ArgParserType(allProperties = true, command = "batch-type-table")
-public class BatchTypeTableHandler extends BaseDdlOutputHandler implements ArgParserEntrypoint {
+public class BatchTypeTableHandler extends BaseDdlHandler implements ArgParserEntrypoint {
+
+    @ArgParserField(position = 1)
+    private String tableName = "t_table_$i";
 
     @ArgParserField("f")
     private String file;
@@ -46,10 +48,7 @@ public class BatchTypeTableHandler extends BaseDdlOutputHandler implements ArgPa
     @ArgParserField({"r"})
     int combinationRepeat = 1;
 
-    @ArgParserField(required = true, position = 0)
-    private String tableName = "t_table_$i";
     boolean ignoreError; // ignore error when any TypeTableHandler failed
-    private String rowNullRatio;
     @ArgParserField({"b"})
     int batchSize = 1;
     @ArgParserField({"n"})
@@ -120,7 +119,7 @@ public class BatchTypeTableHandler extends BaseDdlOutputHandler implements ArgPa
         }
 
         this.afterPropertySet();
-        run(connection -> this.handle(connection, typesList));
+        jdbc.run(connection -> this.handle(connection, typesList));
     }
 
     @Override
@@ -130,7 +129,6 @@ public class BatchTypeTableHandler extends BaseDdlOutputHandler implements ArgPa
         this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
                 .batchSize(batchSize)
                 .rowNum(rowNum)
-                .rowNullRatio(rowNullRatio)
                 .columnNameTemplate(columnNameTemplate)
                 .partitionColumnNameTemplate(partitionColumnNameTemplate)
                 .columnQuota(columnQuota)
@@ -140,16 +138,11 @@ public class BatchTypeTableHandler extends BaseDdlOutputHandler implements ArgPa
                 .tableSuffixSql(tableSuffixSql)
                 .extraColumnSql(extraColumnSql)
                 .setEnumValues(setEnumValues)
-                .compact(compact)
-                .rollingFile(rollingFile)
-                .rollingFileMaxSqlCount(rollingFileMaxSqlCount)
-                .dataSourceType(dataSourceType)
-                .converterFile(converterFile)
-                .converters(converters)
-                .nullRatio(nullRatio)
-                .enableNeg(enableNeg)
-                .yes(yes)
-                .debug(debug);
+                .jdbc(jdbc)
+                .output(output)
+                .randomGen(randomGen)
+                .debug(debug)
+                .yes(yes);
         typeTableHandler.afterPropertySet();
     }
 
@@ -179,18 +172,7 @@ public class BatchTypeTableHandler extends BaseDdlOutputHandler implements ArgPa
                 .columnNameCounter(new HashMap<>())
                 .partitionColumnNameCounter(new HashMap<>());
         typeTableHandler.reset();
-
         List<String> sqlList = typeTableHandler.genSqlList();
-        if (!yes) {
-            output(sqlList);
-            return;
-        }
-
-        try (Statement statement = connection.createStatement()) {
-            output(sqlList);
-            for (String sql : sqlList) {
-                statement.execute(sql);
-            }
-        }
+        typeTableHandler.output(sqlList, connection);
     }
 }

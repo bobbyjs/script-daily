@@ -13,7 +13,7 @@ class BatchTypeTableHandlerTest {
     @Test
     void testFile() throws Exception {
         new SubcommandArgParser(App.class).run(
-                "batch-type-table", "t_table_$i","-f",
+                "batch-type-table", "my_table_$i","-f",
                 new File("src/test/resources/batch.txt").getCanonicalPath());
     }
 

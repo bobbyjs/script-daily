@@ -8,13 +8,12 @@ import org.junit.jupiter.api.Test;
  * @author Jerry Will
  * @version 2023-06-27
  */
-class ImportTypeCsvHandlerTest {
+class ImportCsvHandlerTest {
 
     @Test
-    void testCreateTable() throws Exception {
+    void test() throws Exception {
         new SubcommandArgParser(App.class).run(
-                "import-table-csv", "t_table_test",
-                "-b", "3", "--create-table",
+                "import-csv", "t_table_test", "-b", "3",
                 "-F",ClassPathUtil.getResourceAsString("test.csv"),
                 "-T", ClassPathUtil.getResourceAsString("mysql-text-types.txt"));
     }

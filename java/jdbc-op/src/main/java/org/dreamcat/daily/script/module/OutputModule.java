@@ -1,26 +1,21 @@
-package org.dreamcat.daily.script;
+package org.dreamcat.daily.script.module;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 import org.dreamcat.common.argparse.ArgParserField;
+import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.ObjectUtil;
 
 /**
  * @author Jerry Will
- * @version 2023-06-07
+ * @version 2023-08-14
  */
-@Setter
-@Accessors(fluent = true)
-public abstract class BaseOutputHandler extends BaseHandler {
+@ArgParserType(allProperties = true)
+public class OutputModule {
 
-    boolean compact;
+    public boolean compact;
 
     @ArgParserField({"R"})
     String rollingFile; // such as: output_${i+100}.sql
@@ -30,21 +25,7 @@ public abstract class BaseOutputHandler extends BaseHandler {
     transient int sqlCountCounter;
     transient int rollingFileIndex = 1;
 
-    void output(List<String> sqlList, Connection connection) throws IOException, SQLException {
-        if (!yes) {
-            output(sqlList);
-            return;
-        }
-
-        try (Statement statement = connection.createStatement()) {
-            output(sqlList);
-            for (String sql : sqlList) {
-                statement.execute(sql);
-            }
-        }
-    }
-
-    void output(List<String> sqlList) throws IOException {
+    public void run(List<String> sqlList) throws IOException {
         int size = sqlList.size();
         for (int i = 0; i < size; i++) {
             String sql = sqlList.get(i);

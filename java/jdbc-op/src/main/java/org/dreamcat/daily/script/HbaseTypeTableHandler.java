@@ -23,7 +23,7 @@ public class HbaseTypeTableHandler implements ArgParserEntrypoint {
     private String file;
     @ArgParserField("t")
     private List<String> types;
-    @ArgParserField(required = true, position = 0)
+    @ArgParserField(position = 0)
     private String tableName;
     @ArgParserField({"n"})
     private int rowNum = randi(1, 76);

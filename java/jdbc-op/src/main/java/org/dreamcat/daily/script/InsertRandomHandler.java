@@ -13,15 +13,18 @@ import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.daily.script.model.TypeInfo;
+import org.dreamcat.daily.script.module.JdbcModule;
+import org.dreamcat.daily.script.module.OutputModule;
+import org.dreamcat.daily.script.module.RandomGenModule;
 
 /**
  * @author Jerry Will
  * @version 2023-03-22
  */
 @ArgParserType(allProperties = true, command = "insert-random")
-public class InsertRandomHandler extends BaseOutputHandler implements ArgParserEntrypoint {
+public class InsertRandomHandler implements ArgParserEntrypoint {
 
-    @ArgParserField(required = true, position = 0)
+    @ArgParserField(position = 0)
     private String tableName;
     @ArgParserField("i")
     private Set<String> ignoredColumns;
@@ -30,16 +33,24 @@ public class InsertRandomHandler extends BaseOutputHandler implements ArgParserE
 
     boolean columnQuota;
     boolean doubleQuota; // "c1" or `c2`
-    @ArgParserField("S")
-    String dataSourceType;
-    String converterFile;
-    Set<String> converters; // binary:cast($value as $type)
     String setEnumValues = "a,b,c,d";
 
     @ArgParserField({"b"})
     int batchSize = 1;
     @ArgParserField({"n"})
     int rowNum = randi(1, 76);
+    @ArgParserField(value = {"y"})
+    boolean yes; // execute sql or not actually
+    boolean debug;
+    @ArgParserField(firstChar = true)
+    boolean help;
+
+    @ArgParserField(nested = true)
+    JdbcModule jdbc;
+    @ArgParserField(nested = true)
+    OutputModule output;
+    @ArgParserField(nested = true)
+    RandomGenModule randomGen;
 
     transient TypeTableHandler typeTableHandler;
 
@@ -56,27 +67,20 @@ public class InsertRandomHandler extends BaseOutputHandler implements ArgParserE
         }
 
         this.afterPropertySet();
-        run(this::handle);
+        jdbc.run(this::handle);
     }
 
     protected void afterPropertySet() throws Exception {
-        super.afterPropertySet();
-
         this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
                 .batchSize(batchSize)
                 .rowNum(rowNum)
                 .tableName(tableName)
-                .columnNameTemplate("$type")
-                .partitionColumnNameTemplate("$type")
                 .columnQuota(columnQuota)
                 .doubleQuota(doubleQuota)
                 .setEnumValues(setEnumValues)
-                .compact(compact)
-                .rollingFile(rollingFile)
-                .rollingFileMaxSqlCount(rollingFileMaxSqlCount)
-                .dataSourceType(dataSourceType)
-                .converterFile(converterFile)
-                .converters(converters)
+                .jdbc(jdbc)
+                .output(output)
+                .randomGen(randomGen)
                 .yes(yes)
                 .debug(debug);
         typeTableHandler.afterPropertySet();
@@ -91,15 +95,6 @@ public class InsertRandomHandler extends BaseOutputHandler implements ArgParserE
                 .partitionTypes(partitionTypes);
 
         List<String> sqlList = typeTableHandler.genSql().second();
-        if (!yes) {
-            output(sqlList);
-            return;
-        }
-        try (Statement statement = connection.createStatement()) {
-            output(sqlList);
-            for (String sql : sqlList) {
-                statement.execute(sql);
-            }
-        }
+        typeTableHandler.output(sqlList, connection);
     }
 }
