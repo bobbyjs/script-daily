@@ -8,7 +8,6 @@ import org.dreamcat.common.argparse.SubcommandArgParser;
 import org.dreamcat.common.argparse.SubcommandHelpInfo;
 import org.dreamcat.common.json.YamlUtil;
 import org.dreamcat.common.util.ClassPathUtil;
-import org.dreamcat.common.util.SystemUtil;
 
 /**
  * @author Jerry Will

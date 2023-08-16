@@ -1,6 +1,7 @@
 package org.dreamcat.daily.script;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -22,8 +23,11 @@ import org.dreamcat.daily.script.module.JdbcModule;
 @ArgParserType(allProperties = true, command = "export-csv")
 public class ExportCsvHandler implements ArgParserEntrypoint {
 
-    private List<String> databaseNames;
+    private String catalog;
+    private String databasePattern;
+    private List<String> databases;
     private boolean allDatabases;
+    private String tableLike;
     private String tablePattern;
     private List<String> tableNames;
 
@@ -33,25 +37,53 @@ public class ExportCsvHandler implements ArgParserEntrypoint {
     @SneakyThrows
     @Override
     public void run(ArgParserContext argParserContext) {
-        if (ObjectUtil.isEmpty(databaseNames) && !allDatabases) {
-            System.out.println("no databases");
-            System.exit(0);
+        if (ObjectUtil.isEmpty(databases) && !allDatabases && ObjectUtil.isBlank(databasePattern)) {
+            System.out.println("require arg: --databases or --all-databases "
+                    + "or --database-pattern");
+            System.exit(1);
         }
 
         jdbc.run(this::handle);
     }
 
     protected void handle(Connection connection) throws Exception {
-        if (ObjectUtil.isEmpty(databaseNames)) {
-            databaseNames = JdbcUtil.getDatabases(connection);
-            if (ObjectUtil.isEmpty(databaseNames)) {
-                System.out.println("no databases");
+        if (ObjectUtil.isEmpty(catalog)) {
+            catalog = connection.getCatalog();
+        }
+
+        List<String> matchedDatabases = new ArrayList<>();
+        if (ObjectUtil.isEmpty(databases)) {
+            databases = JdbcUtil.getDatabases(connection, catalog);
+            if (ObjectUtil.isEmpty(databases)) {
+                System.out.println("no databases found in catalog: " + catalog);
                 System.exit(0);
+            } else if (ObjectUtil.isNotBlank(databasePattern)) {
+                for (String database : databases) {
+                    if (!database.matches(databasePattern)) {
+                        System.out.println(database + " is unmatched by " + databasePattern);
+                        continue;
+                    }
+                    matchedDatabases.add(database);
+                }
+            } else {
+                matchedDatabases = databases;
+            }
+        } else {
+            if (ObjectUtil.isNotBlank(databasePattern)) {
+                System.out.println("already pass --databases so --database-pattern is ignored");
+            }
+            if (ObjectUtil.isNotBlank(databasePattern)) {
+                System.out.println("already pass --databases so --all-database is ignored");
             }
         }
 
-        for (String database : databaseNames) {
-            List<String> tables = JdbcUtil.getTables(connection, database);
+        for (String database : matchedDatabases) {
+            List<String> tables;
+            if (ObjectUtil.isNotBlank(tableLike)) {
+                tables = JdbcUtil.getTableLike(connection, catalog, database, tableLike);
+            } else {
+                tables = JdbcUtil.getTables(connection, catalog, database);
+            }
             for (String table : tables) {
                 if (tablePattern != null && !table.matches(tablePattern)) {
                     System.out.println(table + " is unmatched by " + tablePattern);

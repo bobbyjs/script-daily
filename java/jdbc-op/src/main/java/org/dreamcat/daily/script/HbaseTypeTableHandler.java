@@ -9,8 +9,8 @@ import org.dreamcat.common.argparse.ArgParserContext;
 import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
-import org.dreamcat.common.sql.SqlValueRandomGenerator;
 import org.dreamcat.daily.script.model.TypeInfo;
+import org.dreamcat.daily.script.module.RandomGenModule;
 
 /**
  * @author Jerry Will
@@ -32,6 +32,9 @@ public class HbaseTypeTableHandler implements ArgParserEntrypoint {
     private boolean help;
     private String setEnumValues = "a,b,c,d";
 
+    @ArgParserField(nested = true)
+    RandomGenModule randomGenModule;
+
     @Override
     public void run(ArgParserContext context) {
         if (help) {
@@ -50,7 +53,7 @@ public class HbaseTypeTableHandler implements ArgParserEntrypoint {
         if (debug) {
             types.forEach(type -> {
                 type = new TypeInfo(type, setEnumValues).getTypeId();
-                String raw = gen.generateLiteral(type);
+                String raw = randomGenModule.generateLiteral(type);
                 System.out.println(type + ": " + raw);
             });
         }
@@ -67,7 +70,4 @@ public class HbaseTypeTableHandler implements ArgParserEntrypoint {
 
         return sqlList;
     }
-
-    private final SqlValueRandomGenerator gen = new SqlValueRandomGenerator()
-            .maxBitLength(1);
 }

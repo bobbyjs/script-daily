@@ -11,7 +11,7 @@ import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.json.YamlUtil;
-import org.dreamcat.common.sql.SqlValueRandomGenerator;
+import org.dreamcat.common.sql.SqlValueLiterallyGenerator;
 import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.common.util.MapUtil;
@@ -39,15 +39,20 @@ public class RandomGenModule {
     // like this 'ratio,rows', example: 0.5,10
     String rowNullRatio;
 
-    transient final SqlValueRandomGenerator gen = new SqlValueRandomGenerator()
-            .maxBitLength(1)
-            .addEnumAlias("enum8") // clickhouse
-            .addEnumAlias("enum16");
+    transient final SqlValueLiterallyGenerator gen = createGenerator();
     transient RowNullRatioBasedGen rowNullRatioBasedGen;
 
+    private static SqlValueLiterallyGenerator createGenerator() {
+        SqlValueLiterallyGenerator gen = new SqlValueLiterallyGenerator();
+        gen.setMaxBitLength(1);
+        gen.addEnumAlias("enum8"); // clickhouse
+        gen.addEnumAlias("enum16");
+        return gen;
+    }
+
     public void afterPropertySet() throws Exception {
-        gen.enableNeg(enableNeg)
-                .globalConvertor(this::convert);
+        gen.setEnableNeg(enableNeg);
+        gen.setGlobalConvertor(this::convert);
 
         // builtin converters
         Map<String, List<ConverterInfo>> converterInfos = YamlUtil.fromJson(
@@ -97,7 +102,7 @@ public class RandomGenModule {
     }
 
     public String nullLiteral() {
-        return gen.nullLiteral();
+        return gen.getNullLiteral();
     }
 
     public String formatAsLiteral(Object value, TypeInfo typeInfo) {
@@ -111,11 +116,11 @@ public class RandomGenModule {
     private String convert(String literal, String typeName) {
         if (nullRatio < 1 && nullRatio > 0) {
             if (Math.random() <= nullRatio) {
-                return gen.nullLiteral();
+                return gen.getNullLiteral();
             }
         }
         if (rowNullRatioBasedGen != null && rowNullRatioBasedGen.generate()) {
-            return gen.nullLiteral();
+            return gen.getNullLiteral();
         }
         return null;
     }
@@ -138,7 +143,7 @@ public class RandomGenModule {
     }
 
     private void registerConvertor(String type, String template) {
-        gen.registerConvertor((literal, typeName) -> InterpolationUtil.format(
+        gen.register((literal, typeName) -> InterpolationUtil.format(
                 template, MapUtil.of("value", literal, "type", type)), type);
     }
 
