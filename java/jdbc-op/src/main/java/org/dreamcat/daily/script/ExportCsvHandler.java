@@ -1,6 +1,8 @@
 package org.dreamcat.daily.script;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Setter;
@@ -11,6 +13,7 @@ import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.sql.JdbcUtil;
+import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.module.JdbcModule;
 
@@ -30,6 +33,9 @@ public class ExportCsvHandler implements ArgParserEntrypoint {
     private String tableLike;
     private String tablePattern;
     private List<String> tableNames;
+    private String selectSql = "select * from $database.$table";
+    @ArgParserField({"b"})
+    private int batchSize = 1000;
 
     @ArgParserField(nested = true)
     JdbcModule jdbc;
@@ -93,12 +99,19 @@ public class ExportCsvHandler implements ArgParserEntrypoint {
                     System.out.println(table + " is not in " + tableNames);
                     continue;
                 }
-                handle(connection, database, table);
+                try (Statement statement = connection.createStatement()) {
+                    handle(statement, database, table);
+                }
             }
         }
     }
 
-    private void handle(Connection connection, String database, String table) throws Exception {
-
+    private void handle(Statement statement, String database, String table) throws Exception {
+        String sql = InterpolationUtil.format(selectSql,
+                "database", database, "table", table);
+        System.out.println("extract: " + sql);
+        try (ResultSet rs = statement.executeQuery(sql)) {
+            JdbcUtil.getRows(rs, batchSize, )
+        }
     }
 }
