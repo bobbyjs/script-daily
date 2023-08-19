@@ -1,0 +1,20 @@
+ext {
+    // https://mvnrepository.com/artifact/org.apache.poi/poi
+    poiVersion = "5.2.3"
+}
+
+dependencies {
+    implementation project(':common')
+    implementation "org.slf4j:slf4j-simple:$slf4jVersion"
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+    implementation "org.dreamcat:common-excel:0.1"
+    implementation "org.apache.poi:poi:$poiVersion"
+    implementation "org.apache.poi:poi-ooxml:$poiVersion"
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "org.dreamcat.daily.script.App"
+    }
+}

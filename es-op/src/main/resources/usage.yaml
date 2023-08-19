@@ -1,0 +1,49 @@
+subcommandsTitle: 子命令：
+paramsTitle: 参数：
+optionsTitle: 选项：
+identWidth: 2
+inheritAlways: true
+
+header: es-op es命令行工具
+
+helpDesc:
+  help: 打印此帮助
+
+inheritHelpDesc:
+  help: 打印此帮助
+  verbose: 打印详细信息
+
+subcommands:
+  migrate:
+    commandDesc: 从源es迁移数据到目标es中
+    header: es-op migrate 从源es迁移数据到目标es中
+    helpParam:
+      indexConverter: <expr>
+      indexSettings: <file>
+      indexSettingsContent: <json>
+      batchSize: <n>
+      keepAlive: <sec>
+      source.url: <url>
+      source.user: <user>
+      source.password: <password>
+      target.url: <url>
+      target.user: <user>
+      target.password: <password>
+    helpDesc:
+      source.url: 源es的地址，比如http:/127.0.0.1:9200
+      source.user: 源es的用户名
+      source.password: 源es的密码
+      target.url: 目标es的地址
+      target.user: 目标es的用户名
+      target.password: 目标es的密码
+      indexConverter: "目标index的名字，由源index name通过js计算得到，为空则默认等于来源index name\n${ls}例如：t_$it"
+      indexSettings: 在目标es创建index时，使用的settings，指定文件路径
+      indexSettingsContent: 同--index-settings，指定文件内容，而非文件路径
+      exclude: 排除模式，作用于--patterns
+      patterns: index name的正则匹配，在包含模式下，表示只迁移源es的index中name匹配的
+      merge: 在目标es index已存在时，允许合并，而非跳过
+      force: 在目标es index已存在时，先删除之，该选项会忽略--merge
+      abort: 任一index迁移失败，则中止
+      effect: 实际执行迁移操作，否则不会更改目标es
+      batchSize: 分块迁移时的批量读和写大小
+      keepAlive: es scroll的keepAlive时长，单位为s

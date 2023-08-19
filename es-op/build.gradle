@@ -1,0 +1,16 @@
+ext {
+    // https://mvnrepository.com/artifact/co.elastic.clients/elasticsearch-java
+    elasticsearchVersion = '8.8.1'
+}
+
+dependencies {
+    implementation project(':common')
+    implementation "org.dreamcat:common-x:0.3"
+    implementation "co.elastic.clients:elasticsearch-java:$elasticsearchVersion"
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "org.dreamcat.daily.script.Main"
+    }
+}

@@ -1,0 +1,9 @@
+ext {
+    // https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync
+    mongoVersion = '4.10.2'
+}
+dependencies {
+    implementation project(':common')
+
+    implementation "org.mongodb:mongodb-driver-sync:$mongoVersion"
+}

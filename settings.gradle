@@ -4,14 +4,14 @@ def projects = [
         'common',
         'text-find',
         'send-mail',
-        'mongo-migrate',
-        'es-migrate',
-        'fs-migrate',
+        'mongo-op',
+        'es-op',
+        'fs-op',
         'json-op',
         'jdbc-op',
         'eval-op'
 ]
 
 projects.forEach {
-    include "java:$it"
+    include it
 }

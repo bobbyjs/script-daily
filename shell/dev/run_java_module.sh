@@ -12,20 +12,20 @@ if [ -z "$module_name" ]; then
   return 1
 fi
 
-jar_version=$($project_dir/gradlew :java:$module_name:printVersion -q)
+jar_version=$($project_dir/gradlew :$module_name:printVersion -q)
 
-jar_dir="$project_dir/java/$module_name/build/libs"
+jar_dir="$project_dir/$module_name/build/libs"
 # springboot module
-if [[ $($project_dir/gradlew :java:$module_name:tasks -q | grep bootJar) ]]; then
+if [[ $($project_dir/gradlew :$module_name:tasks -q | grep bootJar) ]]; then
   jar_file="$jar_dir/$module_name-$jar_version.jar"
   if [ ! -f "$jar_file" ]; then
-    $project_dir/gradlew :java:$module_name:bootJar
+    $project_dir/gradlew :$module_name:bootJar
   fi
 # fat jar project
 else
   jar_file="$jar_dir/$module_name-$jar_version-all.jar"
   if [ ! -f "$jar_file" ]; then
-      $project_dir/gradlew :java:$module_name:fatJar
+      $project_dir/gradlew :$module_name:fatJar
   fi
 fi
 
