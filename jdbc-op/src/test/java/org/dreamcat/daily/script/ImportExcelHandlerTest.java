@@ -44,7 +44,7 @@ class ImportExcelHandlerTest {
             System.err.println(filename + " doesn't exist, you may run main first");
             return;
         }
-        new SubcommandArgParser(App.class).run(
+        new SubcommandArgParser(Main.class).run(
                 "import-excel",
                 "-b", "3", "--cast-as",
                 "-f", filename.getAbsolutePath(),

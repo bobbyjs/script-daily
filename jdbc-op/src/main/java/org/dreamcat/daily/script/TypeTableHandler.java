@@ -31,7 +31,7 @@ import org.dreamcat.daily.script.model.TypeInfo;
 @Setter
 @Accessors(fluent = true)
 @ArgParserType(allProperties = true, command = "type-table")
-public class TypeTableHandler extends BaseDdlHandler implements ArgParserEntrypoint {
+public class TypeTableHandler extends BaseDdlHandler {
 
     @ArgParserField(position = 1)
     private String tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);
@@ -45,8 +45,6 @@ public class TypeTableHandler extends BaseDdlHandler implements ArgParserEntrypo
     private List<String> types;
     @ArgParserField("P")
     private List<String> partitionTypes;
-    @ArgParserField({"b"})
-    int batchSize = 1;
     @ArgParserField({"n"})
     int rowNum = randi(1, 76);
 

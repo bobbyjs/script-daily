@@ -97,6 +97,10 @@ public class RandomGenModule {
         }
     }
 
+    public String generateValues(List<List<Object>> rows, List<String> typeNames) {
+        return gen.generateValues(rows, typeNames);
+    }
+
     public String generateLiteral(String typeName) {
         return gen.generateLiteral(typeName);
     }

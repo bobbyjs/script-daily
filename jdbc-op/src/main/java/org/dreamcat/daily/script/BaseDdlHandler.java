@@ -1,18 +1,23 @@
 package org.dreamcat.daily.script;
 
+import static org.dreamcat.common.util.ListUtil.getOrNull;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.dreamcat.common.MutableInt;
+import org.dreamcat.common.Pair;
 import org.dreamcat.common.Triple;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.text.InterpolationUtil;
+import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
@@ -52,6 +57,8 @@ public abstract class BaseDdlHandler extends BaseHandler {
     boolean debug;
     @ArgParserField(firstChar = true)
     boolean help;
+    @ArgParserField({"b"})
+    int batchSize = 1;
 
     @ArgParserField(nested = true)
     JdbcModule jdbc;
@@ -192,5 +199,53 @@ public abstract class BaseDdlHandler extends BaseHandler {
                 statement.execute(sql);
             }
         }
+    }
+
+    public Pair<List<String>, List<String>> genSql(String tableName, List<List<Object>> rows,
+            List<TypeInfo> typeInfos) {
+        // create
+        Triple<List<String>, List<String>, List<String>> triple = genCreateTableSql(
+                tableName, typeInfos, Collections.emptyList());
+        List<String> ddlList = triple.first();
+        List<String> columnNames = triple.second();
+
+        // insert
+        List<String> insertList = new ArrayList<>();
+        String columnNameSql = StringUtil.join(
+                ",", columnNames,
+                this::formatColumnName);
+        String insertIntoSql = String.format(
+                "insert into %s(%s) values %%s;", tableName, columnNameSql);
+
+        int pageNum = 1;
+        List<List<Object>> list;
+        while (!(list = ListUtil.subList(rows, pageNum++, batchSize)).isEmpty()) {
+            String valueSql = getValues(list, typeInfos);
+            if (valueSql == null) continue;
+            insertList.add(String.format(insertIntoSql, valueSql));
+        }
+
+        return Pair.of(ddlList, insertList);
+    }
+
+    // (%s,%s,%s),(%s,%s,%s),(%s,%s,%s)
+    private String getValues(List<List<Object>> rows, List<TypeInfo> typeInfos) {
+        int count = typeInfos.size();
+        List<String> valueSqlList = new ArrayList<>();
+        for (List<Object> row : rows) {
+            if (row == null) {
+                System.err.println("found a null row");
+                continue;
+            }
+            List<String> value = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                Object cell = getOrNull(row, i);
+                String literal = randomGen.formatAsLiteral(cell, typeInfos.get(i));
+                value.add(literal);
+            }
+            valueSqlList.add("(" + String.join(",", value) + ")");
+        }
+        if (valueSqlList.isEmpty()) return null;
+        else return String.join(",", valueSqlList);
     }
 }

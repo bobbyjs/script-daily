@@ -37,7 +37,7 @@ import org.dreamcat.daily.script.module.TextTypeModule;
 @Setter
 @Accessors(fluent = true)
 @ArgParserType(allProperties = true, command = "import-csv")
-public class ImportCsvHandler extends BaseDdlHandler implements ArgParserEntrypoint {
+public class ImportCsvHandler extends BaseDdlHandler {
 
     @ArgParserField(position = 1)
     private String tableName;
@@ -49,8 +49,6 @@ public class ImportCsvHandler extends BaseDdlHandler implements ArgParserEntrypo
     private String fileContent;
     @ArgParserField("E")
     private boolean existing;
-    @ArgParserField({"b"})
-    int batchSize = 1;
 
     private boolean tsv;
     private boolean emptyStringAsNull;
@@ -87,15 +85,15 @@ public class ImportCsvHandler extends BaseDdlHandler implements ArgParserEntrypo
         List<List<String>> rows;
         if (ObjectUtil.isNotEmpty(file)) {
             if (tsv) {
-                rows = CsvUtil.parseTsv(new File(file));
+                rows = CsvUtil.readTsv(new File(file));
             } else {
-                rows = CsvUtil.parse(new File(file));
+                rows = CsvUtil.read(new File(file));
             }
         } else {
             if (tsv) {
-                rows = CsvUtil.parseTsv(new StringReader(fileContent));
+                rows = CsvUtil.readTsv(new StringReader(fileContent));
             } else {
-                rows = CsvUtil.parse(new StringReader(fileContent));
+                rows = CsvUtil.read(new StringReader(fileContent));
             }
         }
         if (rows.isEmpty()) {

@@ -32,7 +32,7 @@ import org.dreamcat.common.util.StringUtil;
  * @version 2023-06-06
  */
 @ArgParserType(allProperties = true, command = "batch-type-table")
-public class BatchTypeTableHandler extends BaseDdlHandler implements ArgParserEntrypoint {
+public class BatchTypeTableHandler extends BaseDdlHandler {
 
     @ArgParserField(position = 1)
     private String tableName = "t_table_$i";
@@ -49,22 +49,47 @@ public class BatchTypeTableHandler extends BaseDdlHandler implements ArgParserEn
     int combinationRepeat = 1;
 
     boolean ignoreError; // ignore error when any TypeTableHandler failed
-    @ArgParserField({"b"})
-    int batchSize = 1;
     @ArgParserField({"n"})
     int rowNum = randi(1, 76);
 
     transient TypeTableHandler typeTableHandler;
+    transient List<List<String>> typesList;
 
     @Override
     public void run() throws Exception {
+        this.afterPropertySet();
+        jdbc.run(this::handle);
+    }
+
+    @Override
+    protected void afterPropertySet() throws Exception {
+        super.afterPropertySet();
+
+        this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
+                .rowNum(rowNum)
+                .columnNameTemplate(columnNameTemplate)
+                .partitionColumnNameTemplate(partitionColumnNameTemplate)
+                .columnQuota(columnQuota)
+                .doubleQuota(doubleQuota)
+                .commentAlone(commentAlone)
+                .columnCommentSql(columnCommentSql)
+                .tableSuffixSql(tableSuffixSql)
+                .extraColumnSql(extraColumnSql)
+                .setEnumValues(setEnumValues)
+                .jdbc(jdbc)
+                .output(output)
+                .randomGen(randomGen)
+                .debug(debug)
+                .batchSize(batchSize)
+                .yes(yes);
+        typeTableHandler.afterPropertySet();
+
         if (ObjectUtil.isEmpty(file) && ObjectUtil.isBlank(fileContent) &&
                 ObjectUtil.isEmpty(combinationTypes)) {
             System.err.println("required arg: -f|--file <file> or -F|--file-content <content> or -t|--types <t1> <t2>...");
             System.exit(1);
         }
 
-        List<List<String>> typesList;
         if (ObjectUtil.isNotEmpty(file) || ObjectUtil.isNotBlank(fileContent)) {
             List<String> lines;
             if (ObjectUtil.isNotEmpty(file)) {
@@ -112,36 +137,9 @@ public class BatchTypeTableHandler extends BaseDdlHandler implements ArgParserEn
                 }
             }
         }
-
-        this.afterPropertySet();
-        jdbc.run(connection -> this.handle(connection, typesList));
     }
 
-    @Override
-    protected void afterPropertySet() throws Exception {
-        super.afterPropertySet();
-
-        this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
-                .batchSize(batchSize)
-                .rowNum(rowNum)
-                .columnNameTemplate(columnNameTemplate)
-                .partitionColumnNameTemplate(partitionColumnNameTemplate)
-                .columnQuota(columnQuota)
-                .doubleQuota(doubleQuota)
-                .commentAlone(commentAlone)
-                .columnCommentSql(columnCommentSql)
-                .tableSuffixSql(tableSuffixSql)
-                .extraColumnSql(extraColumnSql)
-                .setEnumValues(setEnumValues)
-                .jdbc(jdbc)
-                .output(output)
-                .randomGen(randomGen)
-                .debug(debug)
-                .yes(yes);
-        typeTableHandler.afterPropertySet();
-    }
-
-    void handle(Connection connection, List<List<String>> typesList) {
+    void handle(Connection connection) {
         int size = typesList.size();
         for (int i = 1; i <= size; i++) {
             List<String> types = typesList.get(i - 1);

@@ -18,20 +18,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Setter;
-import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import org.dreamcat.common.Pair;
-import org.dreamcat.common.Triple;
-import org.dreamcat.common.argparse.ArgParserContext;
-import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.excel.ExcelUtil;
 import org.dreamcat.common.util.ArrayUtil;
 import org.dreamcat.common.util.CollectionUtil;
-import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.common.util.StringUtil;
 import org.dreamcat.daily.script.model.TypeInfo;
 import org.dreamcat.daily.script.module.TextTypeModule;
 
@@ -42,14 +36,12 @@ import org.dreamcat.daily.script.module.TextTypeModule;
 @Setter
 @Accessors(fluent = true)
 @ArgParserType(allProperties = true, command = "import-excel")
-public class ImportExcelHandler extends BaseDdlHandler implements ArgParserEntrypoint {
+public class ImportExcelHandler extends BaseDdlHandler {
 
     @ArgParserField("f")
     private String file;
     @ArgParserField("E")
     private boolean existing;
-    @ArgParserField({"b"})
-    int batchSize = 1;
     @ArgParserField("A")
     boolean castAs;
 
@@ -124,64 +116,12 @@ public class ImportExcelHandler extends BaseDdlHandler implements ArgParserEntry
                 }
 
                 List<TypeInfo> typeInfos = getTypeInfos(connection, sheetName, header, rows);
-                List<String> sqlList = genSqlList(sheetName, rows, typeInfos);
+                Pair<List<String>, List<String>> pair = genSql(sheetName, rows, typeInfos);
+                List<String> sqlList = CollectionUtil.concatToList(pair.first(), pair.second());
                 output(sqlList, connection);
                 sheetIndex++;
             }
         });
-    }
-
-    public List<String> genSqlList(String tableName, List<List<Object>> rows, List<TypeInfo> typeInfos) {
-        Pair<List<String>, List<String>> pair = genSql(tableName, rows, typeInfos);
-        return CollectionUtil.concatToList(pair.first(), pair.second());
-    }
-
-    public Pair<List<String>, List<String>> genSql(String tableName, List<List<Object>> rows,
-            List<TypeInfo> typeInfos) {
-        // create
-        Triple<List<String>, List<String>, List<String>> triple = genCreateTableSql(
-                tableName, typeInfos, Collections.emptyList());
-        List<String> ddlList = triple.first();
-        List<String> columnNames = triple.second();
-
-        // insert
-        List<String> insertList = new ArrayList<>();
-        String columnNameSql = StringUtil.join(
-                ",", columnNames,
-                this::formatColumnName);
-        String insertIntoSql = String.format(
-                "insert into %s(%s) values %%s;", tableName, columnNameSql);
-
-        int pageNum = 1;
-        List<List<Object>> list;
-        while (!(list = ListUtil.subList(rows, pageNum++, batchSize)).isEmpty()) {
-            String valueSql = getValues(list, typeInfos);
-            if (valueSql == null) continue;
-            insertList.add(String.format(insertIntoSql, valueSql));
-        }
-
-        return Pair.of(ddlList, insertList);
-    }
-
-    // (%s,%s,%s),(%s,%s,%s),(%s,%s,%s)
-    private String getValues(List<List<Object>> rows, List<TypeInfo> typeInfos) {
-        int count = typeInfos.size();
-        List<String> valueSqlList = new ArrayList<>();
-        for (List<Object> row : rows) {
-            if (row == null) {
-                System.err.println("found a null row");
-                continue;
-            }
-            List<String> value = new ArrayList<>(count);
-            for (int i = 0; i < count; i++) {
-                Object cell = getOrNull(row, i);
-                String literal = randomGen.formatAsLiteral(cell, typeInfos.get(i));
-                value.add(literal);
-            }
-            valueSqlList.add("(" + String.join(",", value) + ")");
-        }
-        if (valueSqlList.isEmpty()) return null;
-        else return String.join(",", valueSqlList);
     }
 
     private List<TypeInfo> getTypeInfos(Connection connection, String tableName,

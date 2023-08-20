@@ -12,6 +12,8 @@ import org.dreamcat.common.argparse.ArgParserContext;
 import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.daily.script.common.BaseHandler;
+import org.dreamcat.daily.script.common.CliUtil;
 import org.dreamcat.daily.script.model.TypeInfo;
 import org.dreamcat.daily.script.module.JdbcModule;
 import org.dreamcat.daily.script.module.OutputModule;
@@ -22,7 +24,7 @@ import org.dreamcat.daily.script.module.RandomGenModule;
  * @version 2023-03-22
  */
 @ArgParserType(allProperties = true, command = "insert-random")
-public class InsertRandomHandler implements ArgParserEntrypoint {
+public class InsertRandomHandler extends BaseHandler {
 
     @ArgParserField(position = 0)
     private String tableName;
@@ -56,23 +58,13 @@ public class InsertRandomHandler implements ArgParserEntrypoint {
 
     @SneakyThrows
     @Override
-    public void run(ArgParserContext context) {
-        if (help) {
-            System.out.println(context.getHelp());
-            return;
-        }
-        if (tableName == null) {
-            System.err.println("required arg <tableName> is absent");
-            System.exit(1);
-        }
-
-        this.afterPropertySet();
+    public void run() throws Exception {
+        CliUtil.checkParameter(tableName, "<tableName>");
         jdbc.run(this::handle);
     }
 
     protected void afterPropertySet() throws Exception {
         this.typeTableHandler = (TypeTableHandler) new TypeTableHandler()
-                .batchSize(batchSize)
                 .rowNum(rowNum)
                 .tableName(tableName)
                 .columnQuota(columnQuota)
@@ -81,6 +73,7 @@ public class InsertRandomHandler implements ArgParserEntrypoint {
                 .jdbc(jdbc)
                 .output(output)
                 .randomGen(randomGen)
+                .batchSize(batchSize)
                 .yes(yes)
                 .debug(debug);
         typeTableHandler.afterPropertySet();

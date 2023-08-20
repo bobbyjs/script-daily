@@ -24,7 +24,7 @@ class TypeTableHandlerTest {
                 "-c", "Column Type: $type", "-t"));
         args.addAll(Arrays.asList(ClassPathUtil.getResourceAsString(
                 "postgresql-types.txt").split("\n")));
-        SubcommandArgParser argParser = new SubcommandArgParser(App.class);
+        SubcommandArgParser argParser = new SubcommandArgParser(Main.class);
         argParser.run(args);
     }
 
@@ -36,7 +36,7 @@ class TypeTableHandlerTest {
                 "-c", "Column Type: $type", "-t"));
         args.addAll(Arrays.asList(ClassPathUtil.getResourceAsString(
                 "mysql-types.txt").split("\n")));
-        SubcommandArgParser argParser = new SubcommandArgParser(App.class);
+        SubcommandArgParser argParser = new SubcommandArgParser(Main.class);
         argParser.run(args);
     }
 
@@ -49,7 +49,7 @@ class TypeTableHandlerTest {
                 "hive-types.txt").split("\n")));
         args.addAll(Arrays.asList("-p", "date", "string"));
 
-        SubcommandArgParser argParser = new SubcommandArgParser(App.class);
+        SubcommandArgParser argParser = new SubcommandArgParser(Main.class);
         argParser.run(args);
     }
 
@@ -62,7 +62,7 @@ class TypeTableHandlerTest {
         args.addAll(Arrays.asList(ClassPathUtil.getResourceAsString(
                 "clickhouse-types.txt").split("\n")));
 
-        SubcommandArgParser argParser = new SubcommandArgParser(App.class);
+        SubcommandArgParser argParser = new SubcommandArgParser(Main.class);
         argParser.run(args);
     }
 
@@ -73,20 +73,20 @@ class TypeTableHandlerTest {
                 "-c", "Column Type: $type",
                 "--cnt", "${name}_col_$index", "--pcnt", "p_${name}_col_$index",
                 "-F", ClassPathUtil.getResourceAsString("presto-mapping-types.txt"));
-        SubcommandArgParser argParser = new SubcommandArgParser(App.class);
+        SubcommandArgParser argParser = new SubcommandArgParser(Main.class);
         argParser.run(args);
     }
 
     @Test
     void testNullNeg() {
-        new SubcommandArgParser(App.class).run("type-table", "my_table",
+        new SubcommandArgParser(Main.class).run("type-table", "my_table",
                 "-t", "int", "string", "date",
                 "--enable-neg", "--null-ratio", "0.25", "-b", "10", "-n", "100");
     }
 
     @Test
     void testSmartNull() {
-        new SubcommandArgParser(App.class).run("type-table", "my_table",
+        new SubcommandArgParser(Main.class).run("type-table", "my_table",
                 "-t", "int", "string", "date",
                 "--enable-neg", "--row-null-ratio", "0.5,2", "-b", "10", "-n", "100");
     }

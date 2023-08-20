@@ -9,6 +9,7 @@ import org.dreamcat.common.argparse.ArgParserContext;
 import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.daily.script.common.BaseHandler;
 import org.dreamcat.daily.script.model.TypeInfo;
 import org.dreamcat.daily.script.module.RandomGenModule;
 
@@ -17,7 +18,7 @@ import org.dreamcat.daily.script.module.RandomGenModule;
  * @version 2023-05-29
  */
 @ArgParserType(allProperties = true, command = "hbase-type-table")
-public class HbaseTypeTableHandler implements ArgParserEntrypoint {
+public class HbaseTypeTableHandler extends BaseHandler {
 
     @ArgParserField("f")
     private String file;
@@ -36,12 +37,7 @@ public class HbaseTypeTableHandler implements ArgParserEntrypoint {
     RandomGenModule randomGenModule;
 
     @Override
-    public void run(ArgParserContext context) {
-        if (help) {
-            System.out.println(context.getHelp());
-            return;
-        }
-
+    public void run() throws Exception {
         List<String> sqlList = genSql();
         for (String sql : sqlList) {
             System.out.println(sql);

@@ -32,8 +32,6 @@ public class JdbcModule {
     List<String> driverPaths;
     @ArgParserField({"D"})
     Properties props;
-    @ArgParserField(value = {"y"})
-    boolean yes; // execute sql or not actually
 
     public void validateJdbc() {
         // validate args
@@ -43,7 +41,7 @@ public class JdbcModule {
     }
 
     public void run(IConsumer<Connection, ?> f) throws Exception {
-        if (yes || jdbcUrl != null) {
+        if (jdbcUrl != null) {
             validateJdbc();
         }
         // jdbcUrl == null only if yes is false

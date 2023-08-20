@@ -12,7 +12,7 @@ class ImportCsvHandlerTest {
 
     @Test
     void test() throws Exception {
-        new SubcommandArgParser(App.class).run(
+        new SubcommandArgParser(Main.class).run(
                 "import-csv", "t_table_test", "-b", "3",
                 "-F",ClassPathUtil.getResourceAsString("test.csv"),
                 "-T", ClassPathUtil.getResourceAsString("mysql-text-types.txt"));

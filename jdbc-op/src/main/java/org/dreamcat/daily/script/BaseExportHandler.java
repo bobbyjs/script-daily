@@ -7,16 +7,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.Setter;
-import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
-import org.dreamcat.common.argparse.ArgParserContext;
-import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
-import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.common.function.IConsumer;
+import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.sql.JdbcUtil;
 import org.dreamcat.common.text.InterpolationUtil;
+import org.dreamcat.common.util.ExceptionUtil;
+import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.daily.script.module.JdbcModule;
+import org.dreamcat.daily.script.common.BaseHandler;
 
 /**
  * @author Jerry Will
@@ -24,7 +24,7 @@ import org.dreamcat.daily.script.module.JdbcModule;
  */
 @Setter
 @Accessors(fluent = true)
-public class BaseExportHandler implements ArgParserEntrypoint {
+public abstract class BaseExportHandler extends BaseHandler {
 
     private String catalog;
     private String databasePattern;
@@ -36,20 +36,26 @@ public class BaseExportHandler implements ArgParserEntrypoint {
     private String selectSql = "select * from $database.$table";
     @ArgParserField({"b"})
     private int batchSize = 1000;
+    private boolean abort;
 
-    @ArgParserField(nested = true)
-    JdbcModule jdbc;
+    protected abstract void fetchSource(IConsumer<Connection, ?> f) throws Exception;
 
-    @SneakyThrows
+    protected abstract void handleRows(String database, String table,
+            List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap);
+
     @Override
-    public void run(ArgParserContext argParserContext) {
+    protected void afterPropertySet() throws Exception {
+        super.afterPropertySet();
         if (ObjectUtil.isEmpty(databases) && !allDatabases && ObjectUtil.isBlank(databasePattern)) {
             System.out.println("require arg: --databases or --all-databases "
                     + "or --database-pattern");
             System.exit(1);
         }
+    }
 
-        jdbc.run(this::handle);
+    @Override
+    public void run() throws Exception {
+        fetchSource(this::handle);
     }
 
     protected void handle(Connection connection) throws Exception {
@@ -83,6 +89,7 @@ public class BaseExportHandler implements ArgParserEntrypoint {
             }
         }
 
+        outer:
         for (String database : matchedDatabases) {
             List<String> tables;
             if (ObjectUtil.isNotBlank(tableLike)) {
@@ -99,24 +106,35 @@ public class BaseExportHandler implements ArgParserEntrypoint {
                     System.out.println(table + " is not in " + tableNames);
                     continue;
                 }
-                try (Statement statement = connection.createStatement()) {
-                    handle(statement, database, table);
+
+                try {
+                    handle(connection, database, table);
+                } catch (Exception e) {
+                    if (abort) break outer;
                 }
             }
         }
     }
 
-    private void handle(Statement statement, String database, String table) throws Exception {
+    private void handle(Connection connection, String database, String table) throws Exception {
+        // schema
+        List<JdbcColumnDef> columns = JdbcUtil.getColumns(
+                connection, catalog, database, table);
+        Map<String, JdbcColumnDef> columnMap = MapUtil.toMap(columns, JdbcColumnDef::getName);
+
+        // query
         String sql = InterpolationUtil.format(selectSql,
                 "database", database, "table", table);
         System.out.println("extract: " + sql);
-        try (ResultSet rs = statement.executeQuery(sql)) {
-            JdbcUtil.getRows(rs, batchSize, this::handleRows);
+        try (Statement statement = connection.createStatement()) {
+            try (ResultSet rs = statement.executeQuery(sql)) {
+                JdbcUtil.getRows(rs, batchSize, rows -> {
+                    System.out.printf("handling %d rows on %s.%s%n",
+                            rows.size(), database, table);
+                    handleRows(database, table, rows, columnMap);
+                });
+            }
         }
-    }
-
-    private void handleRows(List<Map<String, Object>> rows) {
-        System.out.println("handling " + rows.size() + " rows");
 
     }
 }

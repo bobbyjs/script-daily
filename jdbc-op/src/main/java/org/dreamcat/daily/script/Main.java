@@ -21,10 +21,10 @@ import org.dreamcat.daily.script.common.BaseHandler;
                 ImportCsvHandler.class,
                 ImportExcelHandler.class
         })
-public class App extends BaseHandler {
+public class Main extends BaseHandler {
 
     public static void main(String[] args) throws Exception {
-        run(App.class, args);
+        run(Main.class, args);
     }
 
     @Override
