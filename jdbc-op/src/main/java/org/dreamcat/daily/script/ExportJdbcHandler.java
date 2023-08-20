@@ -1,11 +1,15 @@
 package org.dreamcat.daily.script;
 
+import static org.dreamcat.common.util.StringUtil.isNotEmpty;
+
 import java.io.File;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -14,9 +18,11 @@ import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.function.IConsumer;
 import org.dreamcat.common.io.CsvUtil;
+import org.dreamcat.common.sql.DriverUtil;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.StringUtil;
+import org.dreamcat.daily.script.common.CliUtil;
 import org.dreamcat.daily.script.module.JdbcModule;
 import org.dreamcat.daily.script.module.RandomGenModule;
 
@@ -31,12 +37,31 @@ public class ExportJdbcHandler extends BaseExportHandler {
 
     boolean columnQuota;
     boolean doubleQuota; // "c1" or `c2`
+    boolean verbose;
     boolean yes;
 
-    @ArgParserField(nested = true, nestedPrefix = "source.")
-    JdbcModule source;
-    @ArgParserField(nested = true, nestedPrefix = "target.")
-    JdbcModule target;
+    @ArgParserField(value = {"j1"})
+    String jdbcUrl1;
+    @ArgParserField(value = {"u1"})
+    String user1;
+    @ArgParserField(value = {"p1"})
+    String password1;
+    @ArgParserField(value = {"dc1"})
+    String driverClass1;
+    @ArgParserField(value = {"dp1"})
+    List<String> driverPaths1; // driver directory
+
+    @ArgParserField(value = {"j2"})
+    String jdbcUrl2;
+    @ArgParserField(value = {"u2"})
+    String user2;
+    @ArgParserField(value = {"p2"})
+    String password2;
+    @ArgParserField(value = {"dc2"})
+    String driverClass2;
+    @ArgParserField(value = {"dp2"})
+    List<String> driverPaths2; // driver directory
+
 
     @ArgParserField(nested = true)
     RandomGenModule randomGen;
@@ -45,13 +70,37 @@ public class ExportJdbcHandler extends BaseExportHandler {
     protected void afterPropertySet() throws Exception {
         super.afterPropertySet();
         randomGen.afterPropertySet();
-        source.validateJdbc();
-
+        CliUtil.checkParameter(jdbcUrl1, "-j1|--jdbc-url1");
+        CliUtil.checkParameter(driverPaths1, "--dp1|--driver-paths1");
+        CliUtil.checkParameter(driverClass1, "--dc1|--driver-class1");
+        if (yes) {
+            CliUtil.checkParameter(jdbcUrl2, "-j2|--jdbc-url2");
+            CliUtil.checkParameter(driverPaths2, "--dp2|--driver-paths2");
+            CliUtil.checkParameter(driverClass2, "--dc2|--driver-class2");
+        }
     }
 
     @Override
     protected void fetchSource(IConsumer<Connection, ?> f) throws Exception {
-        source.run(f);
+        List<URL> urls = DriverUtil.parseJarPaths(driverPaths1);
+        for (URL url : urls) {
+            if (verbose) System.out.println("add url to classloader: " + url);
+        }
+        Properties props = new Properties();
+        if (isNotEmpty(user1)) props.put("user", user1);
+        if (isNotEmpty(password1)) props.put("password", password1);
+        DriverUtil.runIsolated(jdbcUrl1, props, urls, driverClass1, f);
+    }
+
+    protected void writeTarget(IConsumer<Connection, ?> f) throws Exception {
+        List<URL> urls = DriverUtil.parseJarPaths(driverPaths2);
+        for (URL url : urls) {
+            if (verbose) System.out.println("add url to classloader: " + url);
+        }
+        Properties props = new Properties();
+        if (isNotEmpty(user2)) props.put("user", user2);
+        if (isNotEmpty(password2)) props.put("password", password2);
+        DriverUtil.runIsolated(jdbcUrl2, props, urls, driverClass2, f);
     }
 
     @SneakyThrows
@@ -74,7 +123,7 @@ public class ExportJdbcHandler extends BaseExportHandler {
         System.out.println(sql);
         if (!yes) return;
 
-        target.run(connection -> {
+        writeTarget(connection -> {
             try (Statement statement = connection.createStatement()) {
                 long t = System.currentTimeMillis();
                 int rowEffect = statement.executeUpdate(sql);
