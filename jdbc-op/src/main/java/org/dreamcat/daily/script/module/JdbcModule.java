@@ -37,9 +37,9 @@ public class JdbcModule {
 
     public void validateJdbc() {
         // validate args
-        CliUtil.checkParameter(jdbcUrl, "jdbcUrl", "-j|--jdbc-url");
-        CliUtil.checkParameter(driverPaths, "driverPaths", "--dp|--driver-paths");
-        CliUtil.checkParameter(driverClass, "driverClass", "--dc|--driver-class");
+        CliUtil.checkParameter(jdbcUrl, "-j|--jdbc-url");
+        CliUtil.checkParameter(driverPaths, "--dp|--driver-paths");
+        CliUtil.checkParameter(driverClass, "--dc|--driver-class");
     }
 
     public void run(IConsumer<Connection, ?> f) throws Exception {

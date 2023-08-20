@@ -20,19 +20,21 @@ subcommands:
     helpParam:
       collectionConverter: <expr>
       batchSize: <n>
-      source.url: <url>
-      target.url: <url>
+      source-url: <url>
+      source-database: <db>
+      target-url: <url>
+      target-database: <db>
     helpDesc:
-      source.url: 源mongo的连接串
-      target.url: 目标mongo的连接串
-      indexConverter: "目标index的名字，由源index name通过js计算得到，为空则默认等于来源index name\n${ls}例如：t_$it"
-      indexSettings: 在目标es创建index时，使用的settings，指定文件路径
-      indexSettingsContent: 同--index-settings，指定文件内容，而非文件路径
+      source-url: 源mongo的连接串
+      source-database: 源mongo库
+      target-url: 目标mongo的连接串
+      target-database: 目标mongo库
+      collectionConverter: "目标collection的名字，由源collection name通过js计算得到，为空则默认等于源collection name\n${ls}例如：'t_' + it"
       exclude: 排除模式，作用于--patterns
-      patterns: index name的正则匹配，在包含模式下，表示只迁移源es的index中name匹配的
-      merge: 在目标es index已存在时，允许合并，而非跳过
-      force: 在目标es index已存在时，先删除之，该选项会忽略--merge
-      abort: 任一index迁移失败，则中止
-      effect: 实际执行迁移操作，否则不会更改目标es
+      patterns: collection name的正则匹配，在包含模式下，表示只迁移源mongo的collection中name匹配的
+      merge: 在目标collection已存在时，允许合并，而非跳过
+      force: 在目标collection已存在时，先删除之，该选项会忽略--merge
+      metaOnly: 在目标collection已存在时，不做任何写操作，仅打印日志
+      abort: 任一collection迁移失败，则中止
+      effect: 实际执行迁移操作，否则不会更改目标mongo，除了
       batchSize: 分块迁移时的批量读和写大小
-      keepAlive: es scroll的keepAlive时长，单位为s

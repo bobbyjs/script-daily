@@ -35,9 +35,9 @@ public class App {
         if (ObjectUtil.isBlank(password)) password = MAIL_PASSWORD;
 
         // validate connection parameters
-        CliUtil.checkParameter(host, "host", "-h|--host", "MAIL_HOST");
-        CliUtil.checkParameter(user, "user", "-u|--user", "MAIL_USER");
-        CliUtil.checkParameter(password, "password", "-p|--password", "MAIL_PASSWORD");
+        CliUtil.checkParameter(host, "-h|--host", "MAIL_HOST");
+        CliUtil.checkParameter(user, "-u|--user", "MAIL_USER");
+        CliUtil.checkParameter(password, "-p|--password", "MAIL_PASSWORD");
         MailSender sender = new MailSender(host, user, password);
 
         String from = argParser.get("from");
@@ -50,9 +50,9 @@ public class App {
         String content = argParser.get("content");
 
         // validate content parameters
-        CliUtil.checkParameter(to, "to", "-t|--to");
+        CliUtil.checkParameter(to, "-t|--to");
         if (ObjectUtil.isEmpty(subject)) subject = "";
-        CliUtil.checkParameter(content, "content", "-c|--content");
+        CliUtil.checkParameter(content, "-c|--content");
 
         MailSender.Op op = sender.newOp()
                 .from(from)

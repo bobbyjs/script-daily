@@ -2,6 +2,8 @@ package org.dreamcat.daily.script;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
+import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 
 /**
@@ -11,11 +13,17 @@ import org.dreamcat.common.argparse.ArgParserType;
 @ArgParserType(allProperties = true)
 public class MongoModule {
 
-    private String url;
+    String url;
+    @ArgParserField("db")
+    String database;
 
-    transient MongoClient client;
+    private transient MongoClient client;
 
     protected void afterPropertySet() throws Exception {
         client = MongoClients.create(url);
+    }
+
+    public MongoDatabase getDatabase() {
+        return client.getDatabase(database);
     }
 }

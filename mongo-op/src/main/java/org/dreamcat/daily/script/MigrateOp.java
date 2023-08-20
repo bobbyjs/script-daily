@@ -10,6 +10,7 @@ import javax.print.Doc;
 import javax.script.ScriptException;
 import org.bson.Document;
 import org.dreamcat.common.argparse.ArgParserField;
+import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.script.DelegateScriptEngine;
 import org.dreamcat.common.text.PatternUtil;
@@ -20,12 +21,11 @@ import org.dreamcat.daily.script.common.CliUtil;
 /**
  * Create by tuke on 2021/3/22
  */
+@ArgParserType(allProperties = true, command = "migrate")
 public class MigrateOp extends BaseHandler {
 
     @ArgParserField({"c", "cc"})
     private String collectionConverter;
-    private String sourceDatabase;
-    private String targetDatabase;
     private boolean exclude;
     @ArgParserField(firstChar = true)
     private List<Pattern> patterns;
@@ -42,9 +42,9 @@ public class MigrateOp extends BaseHandler {
     @ArgParserField(firstChar = true)
     private int batchSize = 1024;
 
-    @ArgParserField(nested = true, nestedPrefix = "source.")
+    @ArgParserField(nested = true, nestedPrefix = "source-")
     private MongoModule source;
-    @ArgParserField(nested = true, nestedPrefix = "target.")
+    @ArgParserField(nested = true, nestedPrefix = "target-")
     private MongoModule target;
 
     private final DelegateScriptEngine scriptEngine = new DelegateScriptEngine();
@@ -52,18 +52,20 @@ public class MigrateOp extends BaseHandler {
     @Override
     protected void afterPropertySet() throws Exception {
         super.afterPropertySet();
+        CliUtil.checkParameter(source.url, "--source-url");
+        CliUtil.checkParameter(target.url, "--target-url");
         source.afterPropertySet();
         target.afterPropertySet();
-        CliUtil.checkParameter(sourceDatabase, "--source-database");
-        if (ObjectUtil.isBlank(targetDatabase)) {
-            targetDatabase = sourceDatabase;
+        CliUtil.checkParameter(source.database, "--source-database");
+        if (ObjectUtil.isBlank(target.database)) {
+            target.database = source.database;
         }
     }
 
     @Override
     public void run() throws Exception {
-        MongoDatabase sourceDb = source.client.getDatabase(sourceDatabase);
-        MongoDatabase targetDb = target.client.getDatabase(targetDatabase);
+        MongoDatabase sourceDb = source.getDatabase();
+        MongoDatabase targetDb = target.getDatabase();
 
         for (String collection : sourceDb.listCollectionNames()) {
             if (!PatternUtil.match(collection, patterns, exclude)) {

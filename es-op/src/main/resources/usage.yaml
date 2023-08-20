@@ -36,7 +36,7 @@ subcommands:
       target.url: 目标es的地址
       target.user: 目标es的用户名
       target.password: 目标es的密码
-      indexConverter: "目标index的名字，由源index name通过js计算得到，为空则默认等于来源index name\n${ls}例如：t_$it"
+      indexConverter: "目标index的名字，由源index name通过js计算得到，为空则默认等于源index name\n${ls}例如：'t_' + it"
       indexSettings: 在目标es创建index时，使用的settings，指定文件路径
       indexSettingsContent: 同--index-settings，指定文件内容，而非文件路径
       exclude: 排除模式，作用于--patterns
