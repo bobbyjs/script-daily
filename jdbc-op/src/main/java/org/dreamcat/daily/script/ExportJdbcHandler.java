@@ -2,7 +2,6 @@ package org.dreamcat.daily.script;
 
 import static org.dreamcat.common.util.StringUtil.isNotEmpty;
 
-import java.io.File;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -17,13 +16,10 @@ import lombok.experimental.Accessors;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.function.IConsumer;
-import org.dreamcat.common.io.CsvUtil;
 import org.dreamcat.common.sql.DriverUtil;
 import org.dreamcat.common.sql.JdbcColumnDef;
-import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.StringUtil;
 import org.dreamcat.daily.script.common.CliUtil;
-import org.dreamcat.daily.script.module.JdbcModule;
 import org.dreamcat.daily.script.module.RandomGenModule;
 
 /**
@@ -106,7 +102,8 @@ public class ExportJdbcHandler extends BaseExportHandler {
     @SneakyThrows
     @Override
     protected void handleRows(String database, String table,
-            List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap) {
+            List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap,
+            Connection targetConnection) {
         List<List<Object>> list = rows.stream().map(this::mapToRow)
                 .collect(Collectors.toList());
 
@@ -123,14 +120,12 @@ public class ExportJdbcHandler extends BaseExportHandler {
         System.out.println(sql);
         if (!yes) return;
 
-        writeTarget(connection -> {
-            try (Statement statement = connection.createStatement()) {
-                long t = System.currentTimeMillis();
-                int rowEffect = statement.executeUpdate(sql);
-                System.out.printf("%d row effect, cost %.2fs%n",
-                        rowEffect, (System.currentTimeMillis() - t) / 1000.);
-            }
-        });
+        try (Statement statement = targetConnection.createStatement()) {
+            long t = System.currentTimeMillis();
+            int rowEffect = statement.executeUpdate(sql);
+            System.out.printf("%d row effect, cost %.2fs%n",
+                    rowEffect, (System.currentTimeMillis() - t) / 1000.);
+        }
     }
 
     private List<Object> mapToRow(Map<String, Object> map) {

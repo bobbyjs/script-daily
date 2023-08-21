@@ -2,6 +2,7 @@ package org.dreamcat.daily.script;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,8 +41,13 @@ public abstract class BaseExportHandler extends BaseHandler {
 
     protected abstract void fetchSource(IConsumer<Connection, ?> f) throws Exception;
 
+    protected void writeTarget(IConsumer<Connection, ?> f) throws Exception {
+        f.accept(null);
+    }
+
     protected abstract void handleRows(String database, String table,
-            List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap);
+            List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap,
+            Connection targetConnection);
 
     @Override
     protected void afterPropertySet() throws Exception {
@@ -58,7 +64,7 @@ public abstract class BaseExportHandler extends BaseHandler {
         fetchSource(this::handle);
     }
 
-    protected void handle(Connection connection) throws Exception {
+    private void handle(Connection connection) throws Exception {
         if (ObjectUtil.isEmpty(catalog)) {
             catalog = connection.getCatalog();
         }
@@ -89,6 +95,14 @@ public abstract class BaseExportHandler extends BaseHandler {
             }
         }
 
+        List<String> dbs = matchedDatabases;
+        writeTarget(targetConnection -> {
+            handle(connection, dbs, targetConnection);
+        });
+    }
+
+    private void handle(Connection connection, List<String> matchedDatabases,
+            Connection targetConnection) throws SQLException {
         outer:
         for (String database : matchedDatabases) {
             List<String> tables;
@@ -108,7 +122,7 @@ public abstract class BaseExportHandler extends BaseHandler {
                 }
 
                 try {
-                    handle(connection, database, table);
+                    handle(connection, database, table, targetConnection);
                 } catch (Exception e) {
                     if (abort) break outer;
                 }
@@ -116,7 +130,8 @@ public abstract class BaseExportHandler extends BaseHandler {
         }
     }
 
-    private void handle(Connection connection, String database, String table) throws Exception {
+    private void handle(Connection connection, String database, String table,
+            Connection targetConnection) throws Exception {
         // schema
         List<JdbcColumnDef> columns = JdbcUtil.getColumns(
                 connection, catalog, database, table);
@@ -131,10 +146,9 @@ public abstract class BaseExportHandler extends BaseHandler {
                 JdbcUtil.getRows(rs, batchSize, rows -> {
                     System.out.printf("handling %d rows on %s.%s%n",
                             rows.size(), database, table);
-                    handleRows(database, table, rows, columnMap);
+                    handleRows(database, table, rows, columnMap, targetConnection);
                 });
             }
         }
-
     }
 }

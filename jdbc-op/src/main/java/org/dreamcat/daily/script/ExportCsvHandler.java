@@ -42,7 +42,8 @@ public class ExportCsvHandler extends BaseExportHandler {
     @SneakyThrows
     @Override
     protected void handleRows(String database, String table,
-            List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap) {
+            List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap,
+            Connection targetConnection) {
         String outputName = InterpolationUtil.format(outputFile,
                 "database", database, "db", database,
                 "table", table, "tb", table);
