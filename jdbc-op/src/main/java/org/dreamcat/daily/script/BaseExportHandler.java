@@ -5,8 +5,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.dreamcat.common.argparse.ArgParserField;
@@ -14,7 +16,6 @@ import org.dreamcat.common.function.IConsumer;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.sql.JdbcUtil;
 import org.dreamcat.common.text.InterpolationUtil;
-import org.dreamcat.common.util.ExceptionUtil;
 import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.common.BaseHandler;
@@ -27,19 +28,23 @@ import org.dreamcat.daily.script.common.BaseHandler;
 @Accessors(fluent = true)
 public abstract class BaseExportHandler extends BaseHandler {
 
+    private boolean useMetadata;
+    private String showDatabases = "show databases";
+    private String showTables = "show tables from $database";
+
     private String catalog;
     private String databasePattern;
     private List<String> databases;
     private boolean allDatabases;
-    private String tableLike;
-    private String tablePattern;
+    private String tablePattern; // .* for sql, or % for metadata
     private List<String> tableNames;
     private String selectSql = "select * from $database.$table";
     @ArgParserField({"b"})
     private int batchSize = 1000;
+    boolean verbose;
     private boolean abort;
 
-    protected abstract void fetchSource(IConsumer<Connection, ?> f) throws Exception;
+    protected abstract void readSource(IConsumer<Connection, ?> f) throws Exception;
 
     protected void writeTarget(IConsumer<Connection, ?> f) throws Exception {
         f.accept(null);
@@ -61,22 +66,18 @@ public abstract class BaseExportHandler extends BaseHandler {
 
     @Override
     public void run() throws Exception {
-        fetchSource(this::handle);
+        readSource(this::handle);
     }
 
     private void handle(Connection connection) throws Exception {
-        if (ObjectUtil.isEmpty(catalog)) {
-            catalog = connection.getCatalog();
-        }
-
         List<String> matchedDatabases = new ArrayList<>();
         if (ObjectUtil.isEmpty(databases)) {
-            databases = JdbcUtil.getDatabases(connection, catalog);
-            if (ObjectUtil.isEmpty(databases)) {
+            List<String> allDatabases = getDatabases(connection);
+            if (ObjectUtil.isEmpty(allDatabases)) {
                 System.out.println("no databases found in catalog: " + catalog);
                 System.exit(0);
             } else if (ObjectUtil.isNotBlank(databasePattern)) {
-                for (String database : databases) {
+                for (String database : allDatabases) {
                     if (!database.matches(databasePattern)) {
                         System.out.println(database + " is unmatched by " + databasePattern);
                         continue;
@@ -84,9 +85,10 @@ public abstract class BaseExportHandler extends BaseHandler {
                     matchedDatabases.add(database);
                 }
             } else {
-                matchedDatabases = databases;
+                matchedDatabases = allDatabases;
             }
         } else {
+            matchedDatabases = databases;
             if (ObjectUtil.isNotBlank(databasePattern)) {
                 System.out.println("already pass --databases so --database-pattern is ignored");
             }
@@ -105,17 +107,12 @@ public abstract class BaseExportHandler extends BaseHandler {
             Connection targetConnection) throws SQLException {
         outer:
         for (String database : matchedDatabases) {
-            List<String> tables;
-            if (ObjectUtil.isNotBlank(tableLike)) {
-                tables = JdbcUtil.getTableLike(connection, catalog, database, tableLike);
-            } else {
-                tables = JdbcUtil.getTables(connection, catalog, database);
+            List<String> tables = getTables(connection, database);
+            if (ObjectUtil.isEmpty(tables)) {
+                System.out.println("no tables found in database " + database);
+                continue;
             }
             for (String table : tables) {
-                if (tablePattern != null && !table.matches(tablePattern)) {
-                    System.out.println(table + " is unmatched by " + tablePattern);
-                    continue;
-                }
                 if (ObjectUtil.isNotEmpty(tableNames) && !tableNames.contains(table)) {
                     System.out.println(table + " is not in " + tableNames);
                     continue;
@@ -124,6 +121,9 @@ public abstract class BaseExportHandler extends BaseHandler {
                 try {
                     handle(connection, database, table, targetConnection);
                 } catch (Exception e) {
+                    System.err.printf("failed to migrate %s.%s: %s%n",
+                            database, table, e.getMessage());
+                    if (verbose) e.printStackTrace();
                     if (abort) break outer;
                 }
             }
@@ -144,11 +144,38 @@ public abstract class BaseExportHandler extends BaseHandler {
         try (Statement statement = connection.createStatement()) {
             try (ResultSet rs = statement.executeQuery(sql)) {
                 JdbcUtil.getRows(rs, batchSize, rows -> {
+
                     System.out.printf("handling %d rows on %s.%s%n",
                             rows.size(), database, table);
                     handleRows(database, table, rows, columnMap, targetConnection);
                 });
             }
         }
+    }
+
+    private List<String> getDatabases(Connection connection) throws SQLException {
+        if (useMetadata) {
+            return JdbcUtil.getDatabases(connection, catalog);
+        }
+        return JdbcUtil.getRows(connection, showDatabases).stream()
+                .map(map -> new ArrayList<>(map.values()).get(0).toString())
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getTables(Connection connection, String database)
+            throws SQLException {
+        if (useMetadata) {
+            if (ObjectUtil.isNotBlank(tablePattern)) {
+                return JdbcUtil.getTableLike(connection, catalog, database, tablePattern);
+            } else {
+                return JdbcUtil.getTables(connection, catalog, database);
+            }
+        }
+        String sql =  InterpolationUtil.format(showTables,
+                "database", database, "db", database);
+        return JdbcUtil.getRows(connection, sql).stream()
+                .map(map -> new ArrayList<>(map.values()).get(0).toString())
+                .filter(name -> ObjectUtil.isBlank(tablePattern) || name.matches(tablePattern))
+                .collect(Collectors.toList());
     }
 }

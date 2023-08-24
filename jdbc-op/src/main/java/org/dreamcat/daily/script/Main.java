@@ -19,7 +19,10 @@ import org.dreamcat.daily.script.common.BaseHandler;
                 HbaseTypeTableHandler.class,
                 // import
                 ImportCsvHandler.class,
-                ImportExcelHandler.class
+                ImportExcelHandler.class,
+                // export
+                ExportCsvHandler.class,
+                ExportJdbcHandler.class
         })
 public class Main extends BaseHandler {
 
