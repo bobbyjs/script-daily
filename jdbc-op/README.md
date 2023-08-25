@@ -24,6 +24,14 @@ docker run -d -it --name postgres15 \
  -v $PWD/postgres15:/var/lib/postgresql/data \
  -p 5432:5432 \
  postgres:15
+ 
+mkdir postgres14
+docker run -d -it --name postgres14 \
+ -e POSTGRES_PASSWORD=root \
+ -e ALLOW_IP_RANGE=0.0.0.0/0 \
+ -v $PWD/postgres14:/var/lib/postgresql/data \
+ -p 5433:5432 \
+ postgres:14
 ```
 
 ```sql

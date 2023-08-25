@@ -79,6 +79,7 @@ public class ExportJdbcHandler extends BaseExportHandler {
         for (URL url : urls) {
             if (verbose) System.out.println("add url to source classloader: " + url);
         }
+        System.out.printf("open source connection on %s%n", jdbcUrl1);
         DriverUtil.runIsolated(jdbcUrl1, user1, password1, urls, driverClass1, f);
     }
 
@@ -92,6 +93,7 @@ public class ExportJdbcHandler extends BaseExportHandler {
         for (URL url : urls) {
             if (verbose) System.out.println("add url to target classloader: " + url);
         }
+        System.out.printf("open target connection on %s%n", jdbcUrl2);
         DriverUtil.runIsolated(jdbcUrl2, user2, password2, urls, driverClass2, f);
     }
 
@@ -114,7 +116,7 @@ public class ExportJdbcHandler extends BaseExportHandler {
                 "insert into %s.%s(%s) values ", database, table, columnNameSql);
 
         String sql = insertIntoSql + randomGen.generateValues(list, typeNames);
-        System.out.println(sql);
+        if (verbose) System.out.println("write sql: " + sql);
         if (!yes) return;
 
         try (Statement statement = targetConnection.createStatement()) {
