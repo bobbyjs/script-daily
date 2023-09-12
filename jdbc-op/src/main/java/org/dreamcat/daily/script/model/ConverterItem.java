@@ -8,7 +8,7 @@ import lombok.Data;
  * @version 2023-05-29
  */
 @Data
-public class ConverterInfo {
+public class ConverterItem {
 
     private String template;
     private Set<String> types;

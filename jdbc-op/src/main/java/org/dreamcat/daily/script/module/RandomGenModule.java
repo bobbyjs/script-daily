@@ -17,7 +17,7 @@ import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
-import org.dreamcat.daily.script.model.ConverterInfo;
+import org.dreamcat.daily.script.model.ConverterItem;
 import org.dreamcat.daily.script.model.TypeInfo;
 
 /**
@@ -55,15 +55,15 @@ public class RandomGenModule {
         gen.setGlobalConvertor(this::convert);
 
         // builtin converters
-        Map<String, List<ConverterInfo>> converterInfos = YamlUtil.fromJson(
+        Map<String, List<ConverterItem>> converterInfos = YamlUtil.fromJson(
                 ClassPathUtil.getResourceAsString("converters.yaml"),
-                new TypeReference<Map<String, List<ConverterInfo>>>() {
+                new TypeReference<Map<String, List<ConverterItem>>>() {
                 });
         registerConvertors(converterInfos);
         // customer converters
         if (StringUtil.isNotEmpty(converterFile)) {
             converterInfos = YamlUtil.fromJson(new File(converterFile),
-                    new TypeReference<Map<String, List<ConverterInfo>>>() {
+                    new TypeReference<Map<String, List<ConverterItem>>>() {
                     });
             registerConvertors(converterInfos);
         }
@@ -129,17 +129,17 @@ public class RandomGenModule {
         return null;
     }
 
-    private void registerConvertors(Map<String, List<ConverterInfo>> converterInfoMap) {
-        Map<String, List<ConverterInfo>> map = new HashMap<>();
+    private void registerConvertors(Map<String, List<ConverterItem>> converterInfoMap) {
+        Map<String, List<ConverterItem>> map = new HashMap<>();
         converterInfoMap.forEach((k, v) -> {
             for (String ds : k.split(",")) {
                 if (StringUtil.isNotEmpty(ds)) map.put(ds, v);
             }
         });
-        List<ConverterInfo> converterInfos = map.get(dataSourceType);
+        List<ConverterItem> converterInfos = map.get(dataSourceType);
         if (converterInfos == null) return;
 
-        for (ConverterInfo converterInfo : converterInfos) {
+        for (ConverterItem converterInfo : converterInfos) {
             for (String type : converterInfo.getTypes()) {
                 registerConvertor(type, converterInfo.getTemplate());
             }

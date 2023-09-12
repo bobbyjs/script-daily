@@ -3,7 +3,7 @@ mysql:
     types:
       - year
 
-pg,postgres,postgresql:
+postgres,postgresql:
   # or: cast($value as $type(16))
   - template: $value::$type(16)
     types:
