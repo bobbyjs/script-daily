@@ -9,6 +9,7 @@ import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.SubcommandArgParser;
 import org.dreamcat.common.argparse.SubcommandHelpInfo;
 import org.dreamcat.common.json.YamlUtil;
+import org.dreamcat.common.util.ObjectUtil;
 
 /**
  * @author Jerry Will
@@ -17,9 +18,13 @@ import org.dreamcat.common.json.YamlUtil;
 public abstract class BaseHandler implements ArgParserEntrypoint {
 
     @ArgParserField(firstChar = true)
+    
     private boolean help;
 
     public static void run(Class<? extends BaseHandler> clazz, String[] args) {
+        if (ObjectUtil.isNotBlank("DEBUG")) {
+
+        }
         SubcommandArgParser argParser = new SubcommandArgParser(clazz);
         // help info
         try (InputStream file = clazz.getClassLoader().getResourceAsStream("usage.yaml")) {
