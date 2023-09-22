@@ -87,6 +87,7 @@ public abstract class BaseDdlHandler extends BaseHandler {
                 doubleQuota = true;
             }
         }
+
     }
 
     protected String getDefaultColumnName() {
