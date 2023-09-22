@@ -38,8 +38,8 @@ public abstract class BaseExportHandler extends BaseHandler {
 
     private String catalog;
     private String databasePattern;
+    @ArgParserField({"d"})
     private List<String> databases;
-    private boolean allDatabases;
     private String tablePattern; // .* for sql, or % for metadata
     private List<String> tables;
     @ArgParserField({"b"})
@@ -60,9 +60,8 @@ public abstract class BaseExportHandler extends BaseHandler {
     @Override
     protected void afterPropertySet() throws Exception {
         super.afterPropertySet();
-        if (ObjectUtil.isEmpty(databases) && !allDatabases && ObjectUtil.isBlank(databasePattern)) {
-            System.out.println("require arg: --databases or --all-databases "
-                    + "or --database-pattern");
+        if (ObjectUtil.isEmpty(databases) && ObjectUtil.isBlank(databasePattern)) {
+            System.out.println("require arg: --databases or --database-pattern");
             System.exit(1);
         }
     }
@@ -79,16 +78,13 @@ public abstract class BaseExportHandler extends BaseHandler {
             if (ObjectUtil.isEmpty(allDatabases)) {
                 System.out.println("no databases found in catalog: " + catalog);
                 System.exit(0);
-            } else if (ObjectUtil.isNotBlank(databasePattern)) {
-                for (String database : allDatabases) {
-                    if (!database.matches(databasePattern)) {
-                        System.out.println(database + " is unmatched by " + databasePattern);
-                        continue;
-                    }
-                    matchedDatabases.add(database);
+            }
+            for (String database : allDatabases) {
+                if (!database.matches(databasePattern)) {
+                    System.out.println(database + " is unmatched by " + databasePattern);
+                    continue;
                 }
-            } else {
-                matchedDatabases = allDatabases;
+                matchedDatabases.add(database);
             }
         } else {
             matchedDatabases = databases;
@@ -101,6 +97,7 @@ public abstract class BaseExportHandler extends BaseHandler {
         }
 
         System.out.println("matched databases: " + matchedDatabases);
+        if (matchedDatabases.isEmpty()) return;
         List<String> dbs = matchedDatabases;
         writeTarget(targetConnection -> {
             handle(connection, dbs, targetConnection);

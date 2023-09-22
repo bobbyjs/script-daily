@@ -26,7 +26,8 @@ class ExportJdbcHandlerTest {
                 home + "/.m2/repository/mysql/mysql-connector-java/8.0.27",
                 "--dc1", "com.mysql.cj.jdbc.Driver",
                 "--j2", "jdbc:mysql://127.0.0.1:3307", "--u2", "root", "--p2", "root",
-                "-S", "mysql", "--verbose", "-y"
+                "-S", "mysql", "--use-show", "--verbose"
+                // , "-y"
         });
     }
 }

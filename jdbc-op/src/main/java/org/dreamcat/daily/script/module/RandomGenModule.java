@@ -45,8 +45,8 @@ public class RandomGenModule {
     private static SqlValueLiterallyGenerator createGenerator() {
         SqlValueLiterallyGenerator gen = new SqlValueLiterallyGenerator();
         gen.setMaxBitLength(1);
-        gen.addEnumAlias("enum8"); // clickhouse
-        gen.addEnumAlias("enum16");
+        // gen.addEnumAlias("enum8"); // clickhouse
+        // gen.addEnumAlias("enum16");
         return gen;
     }
 

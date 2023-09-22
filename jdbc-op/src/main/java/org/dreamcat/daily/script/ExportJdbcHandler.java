@@ -1,6 +1,5 @@
 package org.dreamcat.daily.script;
 
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -13,11 +12,11 @@ import lombok.experimental.Accessors;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.function.IConsumer;
-import org.dreamcat.common.sql.DriverUtil;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
 import org.dreamcat.daily.script.common.CliUtil;
+import org.dreamcat.daily.script.module.JdbcModule;
 import org.dreamcat.daily.script.module.RandomGenModule;
 
 /**
@@ -34,27 +33,10 @@ public class ExportJdbcHandler extends BaseExportHandler {
     @ArgParserField(value = {"y"})
     boolean yes;
 
-    @ArgParserField(value = {"j1"})
-    String jdbcUrl1;
-    @ArgParserField(value = {"u1"})
-    String user1;
-    @ArgParserField(value = {"p1"})
-    String password1;
-    @ArgParserField(value = {"dc1"})
-    String driverClass1;
-    @ArgParserField(value = {"dp1"})
-    List<String> driverPaths1; // driver directory
-
-    @ArgParserField(value = {"j2"})
-    String jdbcUrl2;
-    @ArgParserField(value = {"u2"})
-    String user2;
-    @ArgParserField(value = {"p2"})
-    String password2;
-    @ArgParserField(value = {"dc2"})
-    String driverClass2;
-    @ArgParserField(value = {"dp2"})
-    List<String> driverPaths2; // driver directory
+    @ArgParserField(nested = true, nestedSuffix = "1")
+    JdbcModule jdbc1;
+    @ArgParserField(nested = true, nestedSuffix = "2")
+    JdbcModule jdbc2;
 
     @ArgParserField(nested = true)
     RandomGenModule randomGen;
@@ -63,24 +45,20 @@ public class ExportJdbcHandler extends BaseExportHandler {
     protected void afterPropertySet() throws Exception {
         super.afterPropertySet();
         randomGen.afterPropertySet();
-        CliUtil.checkParameter(jdbcUrl1, "-j1|--jdbc-url1");
-        CliUtil.checkParameter(driverPaths1, "--dp1|--driver-paths1");
-        CliUtil.checkParameter(driverClass1, "--dc1|--driver-class1");
-        if (ObjectUtil.isEmpty(driverPaths2)) driverPaths2 = driverPaths1;
-        if (ObjectUtil.isEmpty(driverClass2)) driverClass2 = driverClass1;
+
+        CliUtil.checkParameter(jdbc1.jdbcUrl, "-j1|--jdbc-url1");
+        CliUtil.checkParameter(jdbc1.driverPaths, "--dp1|--driver-paths1");
+        CliUtil.checkParameter(jdbc1.driverClass, "--dc1|--driver-class1");
+        if (ObjectUtil.isEmpty(jdbc2.driverPaths)) jdbc2.driverPaths = jdbc1.driverPaths;
+        if (ObjectUtil.isEmpty(jdbc2.driverClass)) jdbc2.driverClass = jdbc1.driverClass;
         if (yes) {
-            CliUtil.checkParameter(jdbcUrl2, "-j2|--jdbc-url2");
+            CliUtil.checkParameter(jdbc2.jdbcUrl, "-j2|--jdbc-url2");
         }
     }
 
     @Override
     protected void readSource(IConsumer<Connection, ?> f) throws Exception {
-        List<URL> urls = DriverUtil.parseJarPaths(driverPaths1);
-        for (URL url : urls) {
-            if (verbose) System.out.println("add url to source classloader: " + url);
-        }
-        System.out.printf("open source connection on %s%n", jdbcUrl1);
-        DriverUtil.runIsolated(jdbcUrl1, user1, password1, urls, driverClass1, f);
+        jdbc1.run(f);
     }
 
     @Override
@@ -89,12 +67,7 @@ public class ExportJdbcHandler extends BaseExportHandler {
             super.writeTarget(f);
             return;
         }
-        List<URL> urls = DriverUtil.parseJarPaths(driverPaths2);
-        for (URL url : urls) {
-            if (verbose) System.out.println("add url to target classloader: " + url);
-        }
-        System.out.printf("open target connection on %s%n", jdbcUrl2);
-        DriverUtil.runIsolated(jdbcUrl2, user2, password2, urls, driverClass2, f);
+        jdbc2.run(f);
     }
 
     @SneakyThrows

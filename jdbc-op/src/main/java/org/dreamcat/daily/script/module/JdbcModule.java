@@ -22,20 +22,18 @@ import org.dreamcat.daily.script.model.DataSourceItem;
 public class JdbcModule {
 
     @ArgParserField(value = {"j"})
-    String jdbcUrl;
+    public String jdbcUrl;
     @ArgParserField(value = {"u"})
-    String user;
+    public String user;
     @ArgParserField(value = {"p"})
-    String password;
+    public String password;
     @ArgParserField(value = {"dc"})
-    String driverClass;
+    public String driverClass;
     // driver directory
     @ArgParserField(value = {"dp"})
-    List<String> driverPaths;
+    public List<String> driverPaths;
     @ArgParserField({"D"})
-    Properties props;
-    @ArgParserField({"ds"})
-    String datasource;
+    public Properties props;
 
     public void afterPropertySet() throws Exception {
 
@@ -67,6 +65,8 @@ public class JdbcModule {
         for (URL url : urls) {
             System.out.println("add url to classloader: " + url);
         }
+        System.out.println("jdbcUrl=" + jdbcUrl);
+        System.out.println("props=" + props);
         DriverUtil.runIsolated(jdbcUrl, props, urls, driverClass, f);
     }
 
