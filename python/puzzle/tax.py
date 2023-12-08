@@ -20,16 +20,17 @@ def tax_rate(s):
   else:
     return 0.45, 181920
 
-"""
-count the rax
 
-:param paid: 已预缴预扣税额
-:param income: 累计收入
-:param base: 累计减除费用
-:param deduction: 累计专项扣除 
-:param additional_deduction: 累计专项附加扣除a
-"""
 def tax_count(paid, income, base, deduction, additional_deduction):
+  """
+  count the rax
+  :param paid: 已预缴预扣税额
+  :param income: 累计收入
+  :param base: 累计减除费用
+  :param deduction: 累计专项扣除
+  :param additional_deduction: 累计专项附加扣除
+  """
+
   # 计算应纳税所得额
   taxable_income = income - base - deduction - additional_deduction
   print(taxable_income_template % (taxable_income, income, base, deduction, additional_deduction))

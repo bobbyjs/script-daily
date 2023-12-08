@@ -388,8 +388,8 @@ def generate(base_path, package_name, base_name, method_names):
 
 if __name__ == '__main__':
     """
-    ./generate-spring-ctrl-svc-param-bo-vo-dto.py /Users/tuke/newcore/metadata-server/src/main/java/com/xinheyun/metadata \
-    com.xinheyun.metadata Template \
+    ./generate-spring-ctrl-svc-param-bo-vo-dto.py $project_dir/src/main/java/com/mycompany/metadata \
+    com.mycompany.metadata Template \
     M:Put:modifyStatus \
     Q:Get:getBasic:Long_id \
     M:Put:modifyBasic \
