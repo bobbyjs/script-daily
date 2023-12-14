@@ -48,6 +48,5 @@ subprojects {
     }
 
     apply from: new File(rootDir, 'tasks.gradle')
-    apply from: new File(rootDir, 'publish.gradle')
 }
 

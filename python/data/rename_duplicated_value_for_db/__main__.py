@@ -5,7 +5,7 @@ Create by tuke on 2020/10/20
 
 # cd to the parent directory of on20_rename_duplicated_value_for_db/
 cd ..
-python3 -m on20_rename_duplicated_value_for_db \
+python3 -m rename_duplicated_value_for_db \
   -H x.x.x.x -p xxx -s database_name.table_name -c column_name
 
 """
