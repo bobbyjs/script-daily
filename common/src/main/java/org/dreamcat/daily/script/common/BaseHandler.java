@@ -22,7 +22,7 @@ public abstract class BaseHandler implements ArgParserEntrypoint {
     private boolean help;
 
     public static void run(Class<? extends BaseHandler> clazz, String[] args) {
-        if (ObjectUtil.isNotBlank("DEBUG")) {
+        if (ObjectUtil.isNotBlank(System.getenv("DEBUG")) && !"0".equals(System.getenv("DEBUG"))) {
             System.out.println(Arrays.toString(args));
         }
         SubcommandArgParser argParser = new SubcommandArgParser(clazz);

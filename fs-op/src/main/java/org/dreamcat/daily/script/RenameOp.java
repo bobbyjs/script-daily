@@ -33,7 +33,7 @@ public class RenameOp extends BaseHandler {
     Set<String> types = Collections.singleton("file");
     @ArgParserField("R")
     boolean recursive;
-    @ArgParserField("sr")
+    @ArgParserField({"s", "sr"})
     List<String> sourceRegex; // full match to the filename
     @ArgParserField("tc")
     String trimChar;
@@ -41,8 +41,8 @@ public class RenameOp extends BaseHandler {
     List<String> trimStr;
     @ArgParserField("tr")
     List<String> trChar; // translate a char to another char: --tr '&_' '#_' '$_'
-    // --rr regex1 replacement1 regex2 replacement2 ..., regex like: ^(.+)\?.+$, replacement like: $1
-    @ArgParserField("rr")
+    // --r regex1 replacement1 regex2 replacement2 ..., regex like: ^(.+)\?.+$, replacement like: $1
+    @ArgParserField({"r", "rr"})
     List<String> replacementRegex;
     @ArgParserField(firstChar = true)
     boolean force;
@@ -64,7 +64,7 @@ public class RenameOp extends BaseHandler {
                 types.contains("dir") || types.contains("DIR");
         if (ObjectUtil.isEmpty(replacementRegex) && ObjectUtil.isEmpty(trimChar)
                 && ObjectUtil.isEmpty(trimStr) && ObjectUtil.isEmpty(trChar)) {
-            System.err.println("required one of --tr-regex | --trim-char | --trim-str");
+            System.err.println("required one of --replacement-regex | --trim-char | --trim-str| --tr-char");
             System.exit(1);
         }
         if (ObjectUtil.isNotEmpty(trChar)) {
@@ -88,9 +88,6 @@ public class RenameOp extends BaseHandler {
             Iterator<Path> iter = paths.iterator();
             while (iter.hasNext()) {
                 Path path = iter.next();
-                if (verbose) {
-                    System.out.println("start to handle: " + path);
-                }
                 if (Files.isDirectory(path)) {
                     // handle children first
                     if (recursive) handleChildren(path);
@@ -122,9 +119,14 @@ public class RenameOp extends BaseHandler {
     }
 
     private void handle0(Path path) throws IOException {
+        if (verbose) {
+            System.out.println("start to handle: " + path);
+        }
         String sourceName = path.toFile().getName();
         if (!isMatchSourceRegex(sourceName)) {
-            log.warn("unmatched source pattern, skip it: {}", path);
+            if (verbose) {
+                log.warn("unmatched source pattern, skip it: {}", path);
+            }
             return;
         }
         String targetName = sourceName;
