@@ -10,7 +10,6 @@ import org.dreamcat.daily.script.common.BaseHandler;
         firstChar = true,
         subcommands = {
                 RenameOp.class,
-                RenameByOp.class,
         })
 public class Main extends BaseHandler {
 

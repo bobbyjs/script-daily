@@ -5,13 +5,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
-import org.dreamcat.common.io.FileUtil;
+import org.dreamcat.common.util.ObjectUtil;
+import org.dreamcat.common.util.StringUtil;
 import org.dreamcat.daily.script.common.BaseHandler;
 import org.dreamcat.daily.script.common.CliUtil;
 
@@ -23,27 +28,32 @@ import org.dreamcat.daily.script.common.CliUtil;
 public class RenameOp extends BaseHandler {
 
     @ArgParserField(position = 1)
-    private String sourcePath;
+    String sourcePath;
     @ArgParserField("t")
-    private Set<String> types = Collections.singleton("file");
+    Set<String> types = Collections.singleton("file");
     @ArgParserField("R")
-    private boolean recursive;
-    // regex like: ^(.+)\?.+$
-    @ArgParserField({"s", "sr"})
-    private String sourceRegex;
-    // support regex like: $1
-    @ArgParserField({"r", "rr"})
-    private String replacementRegex;
+    boolean recursive;
+    @ArgParserField("sr")
+    List<String> sourceRegex; // full match to the filename
+    @ArgParserField("tc")
+    String trimChar;
+    @ArgParserField("ts")
+    List<String> trimStr;
+    @ArgParserField("tr")
+    List<String> trChar; // translate a char to another char: --tr '&_' '#_' '$_'
+    // --rr regex1 replacement1 regex2 replacement2 ..., regex like: ^(.+)\?.+$, replacement like: $1
+    @ArgParserField("rr")
+    List<String> replacementRegex;
     @ArgParserField(firstChar = true)
-    private boolean force;
+    boolean force;
     @ArgParserField({"y", "yes"})
-    private boolean effect;
-    private boolean abort;
+    boolean effect;
+    boolean abort;
     @ArgParserField("V")
-    private boolean verbose;
+    boolean verbose;
 
-    protected transient boolean includeFile;
-    protected transient boolean includeDir;
+    transient boolean includeFile;
+    transient boolean includeDir;
 
     @Override
     protected void afterPropertySet() throws Exception {
@@ -52,11 +62,24 @@ public class RenameOp extends BaseHandler {
                 types.contains("file") || types.contains("FILE");
         this.includeDir = types.contains("d") || types.contains("D") ||
                 types.contains("dir") || types.contains("DIR");
+        if (ObjectUtil.isEmpty(replacementRegex) && ObjectUtil.isEmpty(trimChar)
+                && ObjectUtil.isEmpty(trimStr) && ObjectUtil.isEmpty(trChar)) {
+            System.err.println("required one of --tr-regex | --trim-char | --trim-str");
+            System.exit(1);
+        }
+        if (ObjectUtil.isNotEmpty(trChar)) {
+            for (String s : trChar) {
+                if (s.length() != 2) {
+                    System.err.printf("invalid value `%s` for --tr%n", s);
+                    System.exit(1);
+                }
+            }
+        }
     }
 
     @Override
     public void run() throws Exception {
-        Path source = Paths.get(sourcePath);
+        Path source = Paths.get(sourcePath).toAbsolutePath().normalize();
         handleChildren(source);
     }
 
@@ -65,11 +88,14 @@ public class RenameOp extends BaseHandler {
             Iterator<Path> iter = paths.iterator();
             while (iter.hasNext()) {
                 Path path = iter.next();
+                if (verbose) {
+                    System.out.println("start to handle: " + path);
+                }
                 if (Files.isDirectory(path)) {
                     // handle children first
-                    if (recursive) handleChildren(dir);
+                    if (recursive) handleChildren(path);
                     // then handle itself
-                    if (includeDir) handleSelf(dir);
+                    if (includeDir) handleSelf(path);
                 } else if (Files.isRegularFile(path)) {
                     if (includeFile) handleSelf(path);
                 }
@@ -95,15 +121,39 @@ public class RenameOp extends BaseHandler {
         }
     }
 
-    private void handle0(Path source) throws IOException {
-        String sourceName = FileUtil.basename(source.toAbsolutePath().toString());
-        if (!sourceName.matches(sourceRegex)) {
-            log.warn("unmatched source pattern, skip it: {}", source);
+    private void handle0(Path path) throws IOException {
+        String sourceName = path.toFile().getName();
+        if (!isMatchSourceRegex(sourceName)) {
+            log.warn("unmatched source pattern, skip it: {}", path);
             return;
         }
-
-        String targetName = sourceName.replaceAll(sourceRegex, replacementRegex);
-        Path target = Paths.get(source.toAbsolutePath().getParent().toString(), targetName);
+        String targetName = sourceName;
+        if (ObjectUtil.isNotEmpty(trimChar)) {
+            targetName = StringUtil.prune(targetName, trimChar);
+        }
+        if (ObjectUtil.isNotEmpty(trimStr)) {
+            for (String s : trimStr) {
+                targetName = targetName.replace(s, "");
+            }
+        }
+        if (ObjectUtil.isNotEmpty(trChar)) {
+            Map<Character, Character> trMap = new HashMap<>(trChar.size());
+            for (String s : trChar) {
+                trMap.put(s.charAt(0), s.charAt(1));
+            }
+            targetName = StringUtil.translate(targetName, trMap);
+        }
+        if (ObjectUtil.isNotEmpty(replacementRegex)) {
+            for (int i = 0, n = replacementRegex.size(); i < n - 1; i+=2) {
+                targetName = targetName.replaceAll(replacementRegex.get(i), replacementRegex.get(i + 1));
+            }
+        }
+        if (Objects.equals(sourceName, targetName)) {
+            System.out.printf("same name between source and target, name: %s, source: %s%n",
+                    sourceName, path);
+            return;
+        }
+        Path target = Paths.get(path.toAbsolutePath().getParent().toString(), targetName);
         if (Files.exists(target)) {
             if (force) {
                 // force delete existing schemas
@@ -117,9 +167,17 @@ public class RenameOp extends BaseHandler {
             }
         }
 
-        System.out.printf("rename file %s to %s%n", source, target);
+        System.out.printf("rename file %s to %s%n", path, target);
         if (effect) {
-            Files.move(source, target);
+            Files.move(path, target);
         }
+    }
+
+    private boolean isMatchSourceRegex(String sourceName) {
+        if (ObjectUtil.isEmpty(sourceRegex)) return true;
+        for (String s : sourceRegex) {
+            if (sourceName.matches(s)) return true;
+        }
+        return false;
     }
 }

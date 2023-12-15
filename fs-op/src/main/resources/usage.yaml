@@ -22,10 +22,9 @@ subcommands:
       replacementRegex: <regex>
     helpDesc:
       sourcePath: 需要重命名的目录
-      excludeFile: 是否排除文件，
-      includeDir: 是否重命名文件夹
-      sourceRegex: 需要被重命名的部分
-      replacementRegex: 重命名之后的名字，可以包含$1等正则式
+      types: 需要处理的文件类型，默认file，取值：file，dir，
+      sourceRegex: 需要被重命名的文件，正则全匹配
+      replacementRegex: 重命名规则，可以包含$1等正则式
       force: 在目标文件已存在时，先删除之
       abort: 任一index迁移失败，则中止
       effect: 实际执行删除和重命名等操作
