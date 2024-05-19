@@ -2,7 +2,7 @@
 
 # ffmpeg_merge_ts -p prefixname -s subffixname -n 1..36 -o
 
-function ffmpeg_merge_ts_help() {
+function _ffmpeg_merge_ts_help() {
     echo "ffmpeg_merge_ts"
     echo "\t-h, --help\tprint help information and exit"
     echo "\t-p, --prefix\tprefixname"
@@ -22,7 +22,7 @@ function ffmpeg_merge_ts (){
         arg=$1
         case $arg in
         -h | --help)
-            ffmpeg_merge_ts_help
+            _ffmpeg_merge_ts_help
             return 0 ;;
         -p | --prefix)
             shift

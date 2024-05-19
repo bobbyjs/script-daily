@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-work_dir=$(pwd -P)
 current_dir=$(cd "$(dirname $0)" && pwd -P)
 project_dir=$(cd "$current_dir/../.." && pwd -P)
-cd "$project_dir" || (echo "dir not found: $project_dir" && return 1)
+[[ ! -d "$project_dir" ]] && (echo "dir not found: $project_dir" && return 1)
 
 module_name=$1
 shift
@@ -12,20 +11,22 @@ if [ -z "$module_name" ]; then
   return 1
 fi
 
-jar_version=$($project_dir/gradlew :$module_name:printVersion -q)
+alias gradle="'$project_dir/gradlew' -p '$project_dir'"
+
+jar_version=$(gradle :$module_name:printVersion -q)
 
 jar_dir="$project_dir/$module_name/build/libs"
 # springboot module
-if [ "$($project_dir/gradlew :$module_name:tasks -q | grep bootJar)" ]; then
+if [ "$(gradle :$module_name:tasks -q | grep bootJar)" ]; then
   jar_file="$jar_dir/$module_name-$jar_version.jar"
   if [ ! -f "$jar_file" ]; then
-    $project_dir/gradlew :$module_name:bootJar
+    gradle :$module_name:bootJar
   fi
 # fat jar project
 else
   jar_file="$jar_dir/$module_name-$jar_version-all.jar"
   if [ ! -f "$jar_file" ]; then
-      $project_dir/gradlew :$module_name:fatJar
+      gradle :$module_name:fatJar
   fi
 fi
 
@@ -43,8 +44,6 @@ while [ $# -gt 0 ]; do
     fi
     shift
 done
-
-cd "$work_dir"
 
 java "${jvm_args[@]}" \
   -jar $jar_file "${main_args[@]}"

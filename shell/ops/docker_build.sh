@@ -29,7 +29,6 @@ function docker_build() {
         tag=`echo $IMAGE_NAME | cut -d: -f2`
     fi
 
-
     if [[ -n `docker image ls | grep $repository | grep $tag` ]]; then
         log_warn "$IMAGE_NAME already exists"
         log_warn "Done"

@@ -83,7 +83,7 @@ function docker_build_jar() {
         docker rmi ${OLD_DOCKER_HASH}
     fi
 
-    if [ -z $REPOSITORY_NAME -o "--push" != "$PUSH" ]; then
+    if [ -z $REPOSITORY_NAME ] || [ "--push" != "$PUSH" ]; then
         echo "Skip to push image $DOCKER_NAME"
         echo "Done"
         return 0
@@ -94,4 +94,4 @@ function docker_build_jar() {
     echo "Done"
 }
 
- if [ $# != 0 ]; then docker_build_jar $@; fi
+if [ $# != 0 ]; then docker_build_jar $@; fi

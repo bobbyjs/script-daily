@@ -15,7 +15,7 @@ if [ ! -f $JAVACMD ]; then
 fi
 
 # detect app
-JAR_NAME=$(ls $BASE_NAME | grep *.jar | head -1)
+JAR_NAME=$(ls "$BASE_NAME" | grep *.jar | head -1)
 if [ ! -f $JAR_NAME ]; then
     echo "the jar archive is not found, please put it in $BASE_NAME"
     return 1
