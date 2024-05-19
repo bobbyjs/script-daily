@@ -33,7 +33,6 @@ done <<EOF
 dev/add_gradle_submodule.sh
 dev/deploy_war_to_tomcat.sh
 dev/init_gradle_java_project.sh
-dev/run_fat_jar.sh
 dev/upgrade_gradle.sh
 ffmpeg/ffmpeg_merge_ts.sh
 ops/docker.sh
