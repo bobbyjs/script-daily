@@ -8,6 +8,8 @@ import pyarrow.parquet as pq
 
 '''
 convert csv/json to parquet
+
+https://filesampleshub.com/format/code/parquet
 '''
 
 __type_mappings = {
