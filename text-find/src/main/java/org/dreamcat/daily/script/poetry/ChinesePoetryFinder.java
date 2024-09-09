@@ -12,7 +12,7 @@ import org.dreamcat.common.argparse.ArgParseException;
 import org.dreamcat.common.argparse.ArgParser;
 import org.dreamcat.common.util.StringUtil;
 import org.dreamcat.common.util.SystemUtil;
-import org.dreamcat.common.x.json.JsonUtil;
+import org.dreamcat.common.json.JsonUtil;
 
 /**
  * @author Jerry Will
